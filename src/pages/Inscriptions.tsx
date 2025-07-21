@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, Edit, Trash2, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import InscriptionForm from "@/components/InscriptionForm";
@@ -61,6 +61,125 @@ export default function Inscriptions() {
   const handleFormSuccess = () => {
     setIsDialogOpen(false);
     fetchInscriptions();
+  };
+
+  const handleEdit = (inscription: Inscription) => {
+    // For now, just show an alert - you could implement edit functionality
+    alert(`Fonction de modification pour ${inscription.nom} ${inscription.prenom} sera implémentée prochainement`);
+  };
+
+  const handleRenew = async (inscription: Inscription) => {
+    try {
+      const newStartDate = new Date(inscription.date_fin);
+      newStartDate.setDate(newStartDate.getDate() + 1);
+      
+      const newEndDate = new Date(newStartDate);
+      const dureeEnMois = parseInt(inscription.duree_abonnement.split(' ')[0]);
+      newEndDate.setMonth(newEndDate.getMonth() + dureeEnMois);
+
+      const renewalData = {
+        nom: inscription.nom,
+        prenom: inscription.prenom,
+        age: inscription.age,
+        telephone: inscription.telephone,
+        specialite: inscription.specialite,
+        date_debut: newStartDate.toISOString().split('T')[0],
+        date_fin: newEndDate.toISOString().split('T')[0],
+        duree_abonnement: inscription.duree_abonnement,
+        prix_total: inscription.prix_total
+      };
+
+      let error;
+      if (inscription.categorie === 'Enfant') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_enfants')
+          .insert([renewalData]);
+        error = insertError;
+      } else if (inscription.categorie === 'Adulte') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_adultes')
+          .insert([renewalData]);
+        error = insertError;
+      } else if (inscription.categorie === 'Femme') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_femmes')
+          .insert([renewalData]);
+        error = insertError;
+      }
+
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de renouveler l'inscription",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Inscription renouvelée avec succès"
+      });
+      
+      fetchInscriptions();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors du renouvellement",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDelete = async (inscription: Inscription) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'inscription de ${inscription.nom} ${inscription.prenom} ?`)) {
+      return;
+    }
+
+    try {
+      let error;
+      if (inscription.categorie === 'Enfant') {
+        const { error: deleteError } = await supabase
+          .from('inscriptions_enfants')
+          .delete()
+          .eq('id', inscription.id);
+        error = deleteError;
+      } else if (inscription.categorie === 'Adulte') {
+        const { error: deleteError } = await supabase
+          .from('inscriptions_adultes')
+          .delete()
+          .eq('id', inscription.id);
+        error = deleteError;
+      } else if (inscription.categorie === 'Femme') {
+        const { error: deleteError } = await supabase
+          .from('inscriptions_femmes')
+          .delete()
+          .eq('id', inscription.id);
+        error = deleteError;
+      }
+
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer l'inscription",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Inscription supprimée avec succès"
+      });
+      
+      fetchInscriptions();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la suppression",
+        variant: "destructive"
+      });
+    }
   };
 
   const categories = ["Tous", "Femme", "Enfant", "Adulte"];
@@ -204,16 +323,34 @@ export default function Inscriptions() {
                      <td className="p-3">
                        {getStatusBadge(inscription.date_fin)}
                      </td>
-                    <td className="p-3">
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          Modifier
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          Renouveler
-                        </Button>
-                      </div>
-                    </td>
+                     <td className="p-3">
+                       <div className="flex gap-1">
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => handleEdit(inscription)}
+                         >
+                           <Edit className="w-4 h-4 mr-1" />
+                           Modifier
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => handleRenew(inscription)}
+                         >
+                           <RotateCcw className="w-4 h-4 mr-1" />
+                           Renouveler
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           className="text-destructive hover:text-destructive"
+                           onClick={() => handleDelete(inscription)}
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
+                       </div>
+                     </td>
                   </tr>
                 ))}
               </tbody>
