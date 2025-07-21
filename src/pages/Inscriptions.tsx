@@ -188,7 +188,9 @@ export default function Inscriptions() {
 
   const filteredInscriptions = inscriptions.filter(inscription => {
     const matchesSearch = inscription.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inscription.prenom.toLowerCase().includes(searchTerm.toLowerCase());
+                         inscription.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inscription.specialite.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inscription.telephone.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "Tous" || inscription.categorie === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -257,7 +259,7 @@ export default function Inscriptions() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher par nom ou prénom..."
+                  placeholder="Rechercher par nom, prénom, spécialité ou téléphone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
