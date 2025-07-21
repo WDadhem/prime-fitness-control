@@ -64,8 +64,11 @@ export default function Inscriptions() {
   };
 
   const handleEdit = (inscription: Inscription) => {
-    // For now, just show an alert - you could implement edit functionality
-    alert(`Fonction de modification pour ${inscription.nom} ${inscription.prenom} sera implémentée prochainement`);
+    console.log('Edit clicked for:', inscription);
+    toast({
+      title: "Modification",
+      description: `Fonction de modification pour ${inscription.nom} ${inscription.prenom} sera implémentée prochainement`,
+    });
   };
 
   const handleRenew = async (inscription: Inscription) => {
