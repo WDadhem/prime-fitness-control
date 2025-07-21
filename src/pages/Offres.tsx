@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ interface FormData {
 
 export default function Offres() {
   const [offres, setOffres] = useState<Offre[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOffre, setEditingOffre] = useState<Offre | null>(null);
   const [formData, setFormData] = useState<FormData>({
@@ -46,21 +48,39 @@ export default function Offres() {
   }, []);
 
   const fetchOffres = async () => {
-    const { data, error } = await supabase
-      .from('offres')
-      .select('*')
-      .order('categorie', { ascending: true });
+    try {
+      setLoading(true);
+      console.log("Fetching offres...");
+      
+      const { data, error } = await supabase
+        .from('offres')
+        .select('*')
+        .order('categorie', { ascending: true });
 
-    if (error) {
+      console.log("Offres data:", data);
+      console.log("Offres error:", error);
+
+      if (error) {
+        console.error("Error fetching offres:", error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les offres: " + error.message,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setOffres(data || []);
+    } catch (error) {
+      console.error("Unexpected error:", error);
       toast({
         title: "Erreur",
-        description: "Impossible de charger les offres",
+        description: "Erreur inattendue lors du chargement des offres",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setLoading(false);
     }
-
-    setOffres(data || []);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -181,6 +201,14 @@ export default function Offres() {
     );
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-lg">Chargement des offres...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -236,7 +264,7 @@ export default function Offres() {
               </div>
 
               <div>
-                <Label htmlFor="prix">Prix (€) *</Label>
+                <Label htmlFor="prix">Prix (DT) *</Label>
                 <Input
                   id="prix"
                   type="number"
@@ -298,7 +326,7 @@ export default function Offres() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {offres.length > 0 ? (offres.reduce((sum, offre) => sum + offre.prix, 0) / offres.length).toFixed(0) : 0} €
+              {offres.length > 0 ? (offres.reduce((sum, offre) => sum + offre.prix, 0) / offres.length).toFixed(0) : 0} DT
             </div>
           </CardContent>
         </Card>
@@ -320,10 +348,15 @@ export default function Offres() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {offres.length > 0 ? Math.max(...offres.map(offre => offre.prix)) : 0} €
+              {offres.length > 0 ? Math.max(...offres.map(offre => offre.prix)) : 0} DT
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Debug info */}
+      <div className="text-sm text-gray-500">
+        Debug: {offres.length} offres chargées
       </div>
 
       {/* Offres Grid */}
@@ -339,7 +372,7 @@ export default function Offres() {
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-primary">
-                  {offre.prix.toFixed(2)} €
+                  {offre.prix.toFixed(0)} DT
                 </span>
                 <span className="text-sm text-muted-foreground">
                   /mois
@@ -381,7 +414,7 @@ export default function Offres() {
         ))}
       </div>
 
-      {offres.length === 0 && (
+      {offres.length === 0 && !loading && (
         <Card className="border-dashed border-2">
           <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
             <Plus className="w-12 h-12 text-muted-foreground" />
@@ -391,6 +424,9 @@ export default function Offres() {
                 Commencez par créer votre première offre
               </p>
             </div>
+            <Button onClick={fetchOffres} variant="outline">
+              Actualiser
+            </Button>
           </CardContent>
         </Card>
       )}
