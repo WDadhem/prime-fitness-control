@@ -14,7 +14,228 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nom: string
+          prenom: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          nom: string
+          prenom: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nom?: string
+          prenom?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      inscriptions_adultes: {
+        Row: {
+          age: number
+          created_at: string
+          date_debut: string
+          date_fin: string
+          duree_abonnement: string
+          id: string
+          nom: string
+          offre_id: string | null
+          prenom: string
+          specialite: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          duree_abonnement: string
+          id?: string
+          nom: string
+          offre_id?: string | null
+          prenom: string
+          specialite: string
+          telephone: string
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          duree_abonnement?: string
+          id?: string
+          nom?: string
+          offre_id?: string | null
+          prenom?: string
+          specialite?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscriptions_adultes_offre_id_fkey"
+            columns: ["offre_id"]
+            isOneToOne: false
+            referencedRelation: "offres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inscriptions_enfants: {
+        Row: {
+          age: number
+          created_at: string
+          date_debut: string
+          date_fin: string
+          duree_abonnement: string
+          id: string
+          nom: string
+          offre_id: string | null
+          prenom: string
+          specialite: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          duree_abonnement: string
+          id?: string
+          nom: string
+          offre_id?: string | null
+          prenom: string
+          specialite: string
+          telephone: string
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          duree_abonnement?: string
+          id?: string
+          nom?: string
+          offre_id?: string | null
+          prenom?: string
+          specialite?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscriptions_enfants_offre_id_fkey"
+            columns: ["offre_id"]
+            isOneToOne: false
+            referencedRelation: "offres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inscriptions_femmes: {
+        Row: {
+          age: number
+          created_at: string
+          date_debut: string
+          date_fin: string
+          duree_abonnement: string
+          id: string
+          nom: string
+          offre_id: string | null
+          prenom: string
+          specialite: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          duree_abonnement: string
+          id?: string
+          nom: string
+          offre_id?: string | null
+          prenom: string
+          specialite: string
+          telephone: string
+          updated_at?: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          duree_abonnement?: string
+          id?: string
+          nom?: string
+          offre_id?: string | null
+          prenom?: string
+          specialite?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inscriptions_femmes_offre_id_fkey"
+            columns: ["offre_id"]
+            isOneToOne: false
+            referencedRelation: "offres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offres: {
+        Row: {
+          categorie: string
+          coach: string | null
+          created_at: string
+          description: string | null
+          id: string
+          nom: string
+          prix: number
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          coach?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          nom: string
+          prix: number
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          coach?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          nom?: string
+          prix?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

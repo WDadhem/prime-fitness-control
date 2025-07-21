@@ -61,7 +61,18 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				/* Gym specific colors */
+				'gym-yellow': 'hsl(var(--gym-yellow))',
+				'gym-blue-light': 'hsl(var(--gym-blue-light))',
+				'gym-success': 'hsl(var(--gym-success))',
+				'gym-warning': 'hsl(var(--gym-warning))',
+				/* Chart colors */
+				'chart-1': 'hsl(var(--chart-1))',
+				'chart-2': 'hsl(var(--chart-2))',
+				'chart-3': 'hsl(var(--chart-3))',
+				'chart-4': 'hsl(var(--chart-4))',
+				'chart-5': 'hsl(var(--chart-5))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
