@@ -55,6 +55,7 @@ export type Database = {
           nom: string
           offre_id: string | null
           prenom: string
+          prix_total: number | null
           specialite: string
           telephone: string
           updated_at: string
@@ -69,6 +70,7 @@ export type Database = {
           nom: string
           offre_id?: string | null
           prenom: string
+          prix_total?: number | null
           specialite: string
           telephone: string
           updated_at?: string
@@ -83,6 +85,7 @@ export type Database = {
           nom?: string
           offre_id?: string | null
           prenom?: string
+          prix_total?: number | null
           specialite?: string
           telephone?: string
           updated_at?: string
@@ -104,10 +107,12 @@ export type Database = {
           date_debut: string
           date_fin: string
           duree_abonnement: string
+          etat_sante: string | null
           id: string
           nom: string
           offre_id: string | null
           prenom: string
+          prix_total: number | null
           specialite: string
           telephone: string
           updated_at: string
@@ -118,10 +123,12 @@ export type Database = {
           date_debut: string
           date_fin: string
           duree_abonnement: string
+          etat_sante?: string | null
           id?: string
           nom: string
           offre_id?: string | null
           prenom: string
+          prix_total?: number | null
           specialite: string
           telephone: string
           updated_at?: string
@@ -132,10 +139,12 @@ export type Database = {
           date_debut?: string
           date_fin?: string
           duree_abonnement?: string
+          etat_sante?: string | null
           id?: string
           nom?: string
           offre_id?: string | null
           prenom?: string
+          prix_total?: number | null
           specialite?: string
           telephone?: string
           updated_at?: string
@@ -161,6 +170,7 @@ export type Database = {
           nom: string
           offre_id: string | null
           prenom: string
+          prix_total: number | null
           specialite: string
           telephone: string
           updated_at: string
@@ -175,6 +185,7 @@ export type Database = {
           nom: string
           offre_id?: string | null
           prenom: string
+          prix_total?: number | null
           specialite: string
           telephone: string
           updated_at?: string
@@ -189,6 +200,7 @@ export type Database = {
           nom?: string
           offre_id?: string | null
           prenom?: string
+          prix_total?: number | null
           specialite?: string
           telephone?: string
           updated_at?: string

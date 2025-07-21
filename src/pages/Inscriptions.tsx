@@ -1,73 +1,67 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Search, Filter } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import InscriptionForm from "@/components/InscriptionForm";
+
+interface Inscription {
+  id: string;
+  nom: string;
+  prenom: string;
+  age: number | null;
+  telephone: string;
+  specialite: string;
+  date_debut: string;
+  date_fin: string;
+  duree_abonnement: string;
+  prix_total: number;
+  categorie: string;
+}
 
 export default function Inscriptions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
+  const [inscriptions, setInscriptions] = useState<Inscription[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { toast } = useToast();
 
-  // Mock data for demonstration
-  const inscriptions = [
-    { 
-      id: 1, 
-      nom: "Dupont", 
-      prenom: "Marie", 
-      age: 28, 
-      telephone: "06.12.34.56.78", 
-      categorie: "Femme", 
-      specialite: "Fitness",
-      dateDebut: "2024-01-15",
-      dateFin: "2024-04-15",
-      duree: "3 mois",
-      offre: "Pack Fitness",
-      statut: "active"
-    },
-    { 
-      id: 2, 
-      nom: "Martin", 
-      prenom: "Pierre", 
-      age: 35, 
-      telephone: "06.23.45.67.89", 
-      categorie: "Adulte", 
-      specialite: "Musculation",
-      dateDebut: "2024-01-10",
-      dateFin: "2024-07-10",
-      duree: "6 mois",
-      offre: "Pack Musculation",
-      statut: "active"
-    },
-    { 
-      id: 3, 
-      nom: "Dubois", 
-      prenom: "Sophie", 
-      age: 12, 
-      telephone: "06.34.56.78.90", 
-      categorie: "Enfant", 
-      specialite: "Natation",
-      dateDebut: "2023-12-01",
-      dateFin: "2024-01-01",
-      duree: "1 mois",
-      offre: "Cours Natation",
-      statut: "expired"
-    },
-    { 
-      id: 4, 
-      nom: "Moreau", 
-      prenom: "Jean", 
-      age: 42, 
-      telephone: "06.45.67.89.01", 
-      categorie: "Adulte", 
-      specialite: "CrossFit",
-      dateDebut: "2024-01-05",
-      dateFin: "2024-01-25",
-      duree: "1 mois",
-      offre: "Pack CrossFit",
-      statut: "expiring"
-    },
-  ];
+  useEffect(() => {
+    fetchInscriptions();
+  }, []);
+
+  const fetchInscriptions = async () => {
+    try {
+      const [enfantsData, adultesData, femmesData] = await Promise.all([
+        supabase.from('inscriptions_enfants').select('*'),
+        supabase.from('inscriptions_adultes').select('*'),
+        supabase.from('inscriptions_femmes').select('*')
+      ]);
+
+      const allInscriptions: Inscription[] = [
+        ...(enfantsData.data || []).map(item => ({ ...item, categorie: 'Enfant' })),
+        ...(adultesData.data || []).map(item => ({ ...item, categorie: 'Adulte' })),
+        ...(femmesData.data || []).map(item => ({ ...item, categorie: 'Femme' }))
+      ];
+
+      setInscriptions(allInscriptions);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les inscriptions",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFormSuccess = () => {
+    setIsDialogOpen(false);
+    fetchInscriptions();
+  };
 
   const categories = ["Tous", "Femme", "Enfant", "Adulte"];
 
@@ -78,16 +72,18 @@ export default function Inscriptions() {
     return matchesSearch && matchesCategory;
   });
 
-  const getStatusBadge = (statut: string) => {
-    switch (statut) {
-      case "active":
-        return <Badge className="bg-gym-success text-white">Active</Badge>;
-      case "expired":
-        return <Badge variant="destructive">Expirée</Badge>;
-      case "expiring":
-        return <Badge className="bg-gym-warning text-white">Expire bientôt</Badge>;
-      default:
-        return <Badge variant="secondary">Inconnue</Badge>;
+  const getStatusBadge = (dateFin: string) => {
+    const today = new Date();
+    const endDate = new Date(dateFin);
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return <Badge variant="destructive">Expirée</Badge>;
+    } else if (diffDays <= 7) {
+      return <Badge className="bg-gym-warning text-white">Expire bientôt</Badge>;
+    } else {
+      return <Badge className="bg-gym-success text-white">Active</Badge>;
     }
   };
 
@@ -113,10 +109,17 @@ export default function Inscriptions() {
             Gérez les inscriptions de vos clients
           </p>
         </div>
-        <Button className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
-          <Plus className="w-4 h-4 mr-2" />
-          Ajouter une inscription
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter une inscription
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <InscriptionForm onSuccess={handleFormSuccess} />
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Search and Filters */}
@@ -171,7 +174,7 @@ export default function Inscriptions() {
                   <th className="text-left p-3">Catégorie</th>
                   <th className="text-left p-3">Spécialité</th>
                   <th className="text-left p-3">Période</th>
-                  <th className="text-left p-3">Offre</th>
+                  <th className="text-left p-3">Prix</th>
                   <th className="text-left p-3">Statut</th>
                   <th className="text-left p-3">Actions</th>
                 </tr>
@@ -190,17 +193,17 @@ export default function Inscriptions() {
                       {getCategoryBadge(inscription.categorie)}
                     </td>
                     <td className="p-3">{inscription.specialite}</td>
-                    <td className="p-3">
-                      <div className="text-sm">
-                        <div>Du {inscription.dateDebut}</div>
-                        <div>Au {inscription.dateFin}</div>
-                        <div className="text-muted-foreground">({inscription.duree})</div>
-                      </div>
-                    </td>
-                    <td className="p-3">{inscription.offre}</td>
-                    <td className="p-3">
-                      {getStatusBadge(inscription.statut)}
-                    </td>
+                     <td className="p-3">
+                       <div className="text-sm">
+                         <div>Du {inscription.date_debut}</div>
+                         <div>Au {inscription.date_fin}</div>
+                         <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
+                       </div>
+                     </td>
+                     <td className="p-3">{inscription.prix_total}€</td>
+                     <td className="p-3">
+                       {getStatusBadge(inscription.date_fin)}
+                     </td>
                     <td className="p-3">
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm">

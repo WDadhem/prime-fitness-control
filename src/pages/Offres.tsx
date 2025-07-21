@@ -1,68 +1,178 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus, Edit, Trash2, DollarSign } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface Offre {
+  id: string;
+  nom: string;
+  coach: string | null;
+  categorie: string;
+  prix: number;
+  description: string | null;
+}
+
+interface FormData {
+  nom: string;
+  coach: string;
+  categorie: string;
+  prix: string;
+  description: string;
+}
 
 export default function Offres() {
-  // Mock data for demonstration
-  const [offres] = useState([
-    {
-      id: 1,
-      nom: "Pack Fitness",
-      coach: "Sarah Martin",
-      categorie: "Femme",
-      prix: 45.00,
-      description: "Programme complet de fitness avec cours collectifs"
-    },
-    {
-      id: 2,
-      nom: "Musculation Premium",
-      coach: "Jean Dupont",
-      categorie: "Adulte",
-      prix: 65.00,
-      description: "Accès illimité à la salle de musculation avec coaching personnalisé"
-    },
-    {
-      id: 3,
-      nom: "Natation Enfants",
-      coach: "Marie Leblanc",
-      categorie: "Enfant",
-      prix: 35.00,
-      description: "Cours de natation adaptés aux enfants de 6 à 16 ans"
-    },
-    {
-      id: 4,
-      nom: "CrossFit Intensif",
-      coach: "Marc Rodriguez",
-      categorie: "Mixte",
-      prix: 55.00,
-      description: "Programme CrossFit pour tous niveaux"
-    },
-    {
-      id: 5,
-      nom: "Yoga & Détente",
-      coach: "Sophie Chen",
-      categorie: "Femme",
-      prix: 40.00,
-      description: "Cours de yoga et méditation pour la détente"
-    },
-    {
-      id: 6,
-      nom: "Cardio Training",
-      coach: null,
-      categorie: "Mixte",
-      prix: 30.00,
-      description: "Accès libre aux équipements de cardio-training"
+  const [offres, setOffres] = useState<Offre[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingOffre, setEditingOffre] = useState<Offre | null>(null);
+  const [formData, setFormData] = useState<FormData>({
+    nom: "",
+    coach: "",
+    categorie: "",
+    prix: "",
+    description: ""
+  });
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchOffres();
+  }, []);
+
+  const fetchOffres = async () => {
+    const { data, error } = await supabase
+      .from('offres')
+      .select('*')
+      .order('categorie', { ascending: true });
+
+    if (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les offres",
+        variant: "destructive"
+      });
+      return;
     }
-  ]);
+
+    setOffres(data || []);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const offreData = {
+      nom: formData.nom,
+      coach: formData.coach || null,
+      categorie: formData.categorie,
+      prix: parseFloat(formData.prix),
+      description: formData.description || null
+    };
+
+    if (editingOffre) {
+      const { error } = await supabase
+        .from('offres')
+        .update(offreData)
+        .eq('id', editingOffre.id);
+
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de modifier l'offre",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Offre modifiée avec succès"
+      });
+    } else {
+      const { error } = await supabase
+        .from('offres')
+        .insert([offreData]);
+
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de créer l'offre",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Offre créée avec succès"
+      });
+    }
+
+    setIsDialogOpen(false);
+    resetForm();
+    fetchOffres();
+  };
+
+  const handleEdit = (offre: Offre) => {
+    setEditingOffre(offre);
+    setFormData({
+      nom: offre.nom,
+      coach: offre.coach || "",
+      categorie: offre.categorie,
+      prix: offre.prix.toString(),
+      description: offre.description || ""
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette offre ?")) {
+      return;
+    }
+
+    const { error } = await supabase
+      .from('offres')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'offre",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Succès",
+      description: "Offre supprimée avec succès"
+    });
+    
+    fetchOffres();
+  };
+
+  const resetForm = () => {
+    setFormData({
+      nom: "",
+      coach: "",
+      categorie: "",
+      prix: "",
+      description: ""
+    });
+    setEditingOffre(null);
+  };
 
   const getCategoryBadge = (categorie: string) => {
     const colors = {
       "Femme": "bg-pink-100 text-pink-800",
       "Enfant": "bg-blue-100 text-blue-800",
-      "Adulte": "bg-green-100 text-green-800",
-      "Mixte": "bg-purple-100 text-purple-800"
+      "Adulte": "bg-green-100 text-green-800"
     };
     return (
       <Badge className={colors[categorie as keyof typeof colors]}>
@@ -80,10 +190,94 @@ export default function Offres() {
             Gérez les offres et services de votre salle de sport
           </p>
         </div>
-        <Button className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
-          <Plus className="w-4 h-4 mr-2" />
-          Ajouter une offre
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter une offre
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingOffre ? "Modifier l'offre" : "Nouvelle offre"}
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="nom">Nom de l'offre *</Label>
+                <Input
+                  id="nom"
+                  value={formData.nom}
+                  onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                  required
+                />
+              </div>
+              
+              <div>
+                <Label htmlFor="categorie">Catégorie *</Label>
+                <Select 
+                  value={formData.categorie} 
+                  onValueChange={(value) => setFormData({...formData, categorie: value})}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choisir une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Enfant">Enfant</SelectItem>
+                    <SelectItem value="Femme">Femme</SelectItem>
+                    <SelectItem value="Adulte">Adulte</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="prix">Prix (€) *</Label>
+                <Input
+                  id="prix"
+                  type="number"
+                  step="0.01"
+                  value={formData.prix}
+                  onChange={(e) => setFormData({...formData, prix: e.target.value})}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="coach">Coach</Label>
+                <Input
+                  id="coach"
+                  value={formData.coach}
+                  onChange={(e) => setFormData({...formData, coach: e.target.value})}
+                  placeholder="Nom du coach (optionnel)"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder="Description de l'offre (optionnel)"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button type="submit" className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
+                  {editingOffre ? "Modifier" : "Créer"}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Annuler
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Statistics */}
@@ -104,7 +298,7 @@ export default function Offres() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {(offres.reduce((sum, offre) => sum + offre.prix, 0) / offres.length).toFixed(0)} €
+              {offres.length > 0 ? (offres.reduce((sum, offre) => sum + offre.prix, 0) / offres.length).toFixed(0) : 0} €
             </div>
           </CardContent>
         </Card>
@@ -126,7 +320,7 @@ export default function Offres() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.max(...offres.map(offre => offre.prix))} €
+              {offres.length > 0 ? Math.max(...offres.map(offre => offre.prix)) : 0} €
             </div>
           </CardContent>
         </Card>
@@ -160,15 +354,25 @@ export default function Offres() {
               )}
 
               <p className="text-sm text-muted-foreground">
-                {offre.description}
+                {offre.description || "Aucune description"}
               </p>
 
               <div className="flex justify-between space-x-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => handleEdit(offre)}
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Modifier
                 </Button>
-                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => handleDelete(offre.id)}
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -177,21 +381,19 @@ export default function Offres() {
         ))}
       </div>
 
-      {/* Add New Offer Card */}
-      <Card className="border-dashed border-2 hover:bg-muted/50 transition-colors cursor-pointer">
-        <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
-          <Plus className="w-12 h-12 text-muted-foreground" />
-          <div className="text-center">
-            <h3 className="text-lg font-medium">Ajouter une nouvelle offre</h3>
-            <p className="text-sm text-muted-foreground">
-              Créez une nouvelle offre pour vos clients
-            </p>
-          </div>
-          <Button className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
-            Commencer
-          </Button>
-        </CardContent>
-      </Card>
+      {offres.length === 0 && (
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Plus className="w-12 h-12 text-muted-foreground" />
+            <div className="text-center">
+              <h3 className="text-lg font-medium">Aucune offre trouvée</h3>
+              <p className="text-sm text-muted-foreground">
+                Commencez par créer votre première offre
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
