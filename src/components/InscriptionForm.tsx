@@ -24,9 +24,22 @@ interface Offre {
 
 interface InscriptionFormProps {
   onSuccess: () => void;
+  editingInscription?: {
+    id: string;
+    nom: string;
+    prenom: string;
+    age: number | null;
+    telephone: string;
+    specialite: string;
+    date_debut: string;
+    date_fin: string;
+    duree_abonnement: string;
+    prix_total: number;
+    categorie: string;
+  } | null;
 }
 
-export default function InscriptionForm({ onSuccess }: InscriptionFormProps) {
+export default function InscriptionForm({ onSuccess, editingInscription }: InscriptionFormProps) {
   const [categorie, setCategorie] = useState("");
   const [offres, setOffres] = useState<Offre[]>([]);
   const [selectedOffre, setSelectedOffre] = useState<Offre | null>(null);
@@ -53,11 +66,46 @@ export default function InscriptionForm({ onSuccess }: InscriptionFormProps) {
     { value: "12", label: "1 an", multiplier: 10 }
   ];
 
+  // Effect pour charger les données d'édition
+  useEffect(() => {
+    if (editingInscription) {
+      setCategorie(editingInscription.categorie);
+      setFormData({
+        nom: editingInscription.nom,
+        prenom: editingInscription.prenom,
+        age: editingInscription.age ? editingInscription.age.toString() : "",
+        telephone: editingInscription.telephone,
+        dateNaissance: undefined,
+        etatSante: "",
+        specialite: editingInscription.specialite
+      });
+      setDateDebut(new Date(editingInscription.date_debut));
+      setDateFin(new Date(editingInscription.date_fin));
+      setPrixTotal(editingInscription.prix_total);
+      
+      // Calculer la durée à partir des dates
+      const debut = new Date(editingInscription.date_debut);
+      const fin = new Date(editingInscription.date_fin);
+      const diffMonths = (fin.getFullYear() - debut.getFullYear()) * 12 + (fin.getMonth() - debut.getMonth());
+      setDuree(diffMonths.toString());
+    }
+  }, [editingInscription]);
+
   useEffect(() => {
     if (categorie) {
       fetchOffres();
     }
   }, [categorie]);
+
+  // Effect pour sélectionner l'offre lors de l'édition
+  useEffect(() => {
+    if (editingInscription && offres.length > 0) {
+      const offreFound = offres.find(o => o.nom === editingInscription.specialite);
+      if (offreFound) {
+        setSelectedOffre(offreFound);
+      }
+    }
+  }, [offres, editingInscription]);
 
   useEffect(() => {
     if (selectedOffre && duree) {
@@ -122,21 +170,45 @@ export default function InscriptionForm({ onSuccess }: InscriptionFormProps) {
 
     let error;
     
-    if (categorie === 'Enfant') {
-      const { error: insertError } = await supabase
-        .from('inscriptions_enfants')
-        .insert([inscriptionData]);
-      error = insertError;
-    } else if (categorie === 'Adulte') {
-      const { error: insertError } = await supabase
-        .from('inscriptions_adultes')
-        .insert([inscriptionData]);
-      error = insertError;
-    } else if (categorie === 'Femme') {
-      const { error: insertError } = await supabase
-        .from('inscriptions_femmes')
-        .insert([inscriptionData]);
-      error = insertError;
+    if (editingInscription) {
+      // Mode édition - mettre à jour l'inscription existante
+      if (categorie === 'Enfant') {
+        const { error: updateError } = await supabase
+          .from('inscriptions_enfants')
+          .update(inscriptionData)
+          .eq('id', editingInscription.id);
+        error = updateError;
+      } else if (categorie === 'Adulte') {
+        const { error: updateError } = await supabase
+          .from('inscriptions_adultes')
+          .update(inscriptionData)
+          .eq('id', editingInscription.id);
+        error = updateError;
+      } else if (categorie === 'Femme') {
+        const { error: updateError } = await supabase
+          .from('inscriptions_femmes')
+          .update(inscriptionData)
+          .eq('id', editingInscription.id);
+        error = updateError;
+      }
+    } else {
+      // Mode création - créer une nouvelle inscription
+      if (categorie === 'Enfant') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_enfants')
+          .insert([inscriptionData]);
+        error = insertError;
+      } else if (categorie === 'Adulte') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_adultes')
+          .insert([inscriptionData]);
+        error = insertError;
+      } else if (categorie === 'Femme') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_femmes')
+          .insert([inscriptionData]);
+        error = insertError;
+      }
     }
 
     if (error) {
@@ -150,7 +222,7 @@ export default function InscriptionForm({ onSuccess }: InscriptionFormProps) {
 
     toast({
       title: "Succès",
-      description: "Inscription enregistrée avec succès"
+      description: editingInscription ? "Inscription modifiée avec succès" : "Inscription enregistrée avec succès"
     });
     
     onSuccess();
@@ -178,7 +250,9 @@ export default function InscriptionForm({ onSuccess }: InscriptionFormProps) {
   return (
     <Card className="w-full max-w-2xl">
       <CardHeader>
-        <CardTitle>Nouvelle Inscription</CardTitle>
+        <CardTitle>
+          {editingInscription ? "Modifier l'inscription" : "Nouvelle Inscription"}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -368,7 +442,7 @@ export default function InscriptionForm({ onSuccess }: InscriptionFormProps) {
 
           <div className="flex gap-2">
             <Button type="submit" className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
-              Enregistrer l'inscription
+              {editingInscription ? "Modifier l'inscription" : "Enregistrer l'inscription"}
             </Button>
             <Button type="button" variant="outline" onClick={resetForm}>
               Annuler

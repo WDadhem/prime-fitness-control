@@ -28,6 +28,7 @@ export default function Inscriptions() {
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [inscriptions, setInscriptions] = useState<Inscription[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInscription, setEditingInscription] = useState<Inscription | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,15 +61,13 @@ export default function Inscriptions() {
 
   const handleFormSuccess = () => {
     setIsDialogOpen(false);
+    setEditingInscription(null);
     fetchInscriptions();
   };
 
   const handleEdit = (inscription: Inscription) => {
-    console.log('Edit clicked for:', inscription);
-    toast({
-      title: "Modification",
-      description: `Fonction de modification pour ${inscription.nom} ${inscription.prenom} sera implémentée prochainement`,
-    });
+    setEditingInscription(inscription);
+    setIsDialogOpen(true);
   };
 
   const handleRenew = async (inscription: Inscription) => {
@@ -239,7 +238,10 @@ export default function Inscriptions() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <InscriptionForm onSuccess={handleFormSuccess} />
+            <InscriptionForm 
+              onSuccess={handleFormSuccess} 
+              editingInscription={editingInscription}
+            />
           </DialogContent>
         </Dialog>
       </div>
