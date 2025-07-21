@@ -8,50 +8,34 @@ import {
   PieChart, Pie, Cell, LineChart, Line, Area, AreaChart
 } from "recharts";
 import { Download, TrendingUp, Users, Clock, DollarSign } from "lucide-react";
+import { useStatistiquesData } from "@/hooks/useStatistiquesData";
 
 export default function Statistiques() {
   const [selectedPeriod, setSelectedPeriod] = useState("6-months");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
-  // Mock data for demonstration
-  const revenusData = [
-    { mois: "Juil", revenus: 12000, inscriptions: 25 },
-    { mois: "Août", revenus: 14500, inscriptions: 32 },
-    { mois: "Sept", revenus: 13200, inscriptions: 28 },
-    { mois: "Oct", revenus: 15420, inscriptions: 35 },
-    { mois: "Nov", revenus: 16800, inscriptions: 38 },
-    { mois: "Déc", revenus: 18200, inscriptions: 42 },
-  ];
+  const {
+    revenusData,
+    categoriesData,
+    coachStats,
+    clientsExpires,
+    clientsExpirationProche,
+    totalClients,
+    totalRevenus,
+    moyenneRevenus,
+    isLoading
+  } = useStatistiquesData();
 
-  const categoriesData = [
-    { name: "Femmes", value: 45, color: "hsl(var(--chart-1))" },
-    { name: "Enfants", value: 32, color: "hsl(var(--chart-2))" },
-    { name: "Adultes", value: 67, color: "hsl(var(--chart-3))" },
-  ];
-
-  const coachStats = [
-    { coach: "Sarah Martin", clients: 28, revenus: 4200, specialite: "Fitness" },
-    { coach: "Jean Dupont", clients: 35, revenus: 5250, specialite: "Musculation" },
-    { coach: "Marie Leblanc", clients: 22, revenus: 3300, specialite: "Natation" },
-    { coach: "Marc Rodriguez", clients: 18, revenus: 2700, specialite: "CrossFit" },
-    { coach: "Sophie Chen", clients: 25, revenus: 3750, specialite: "Yoga" },
-  ];
-
-  const clientsExpires = [
-    { nom: "Dubois", prenom: "Sophie", categorie: "Enfant", dateFin: "2024-01-01", joursRestants: -20 },
-    { nom: "Leroy", prenom: "Paul", categorie: "Adulte", dateFin: "2023-12-15", joursRestants: -37 },
-    { nom: "Bernard", prenom: "Claire", categorie: "Femme", dateFin: "2023-11-30", joursRestants: -52 },
-  ];
-
-  const clientsExpirationProche = [
-    { nom: "Moreau", prenom: "Jean", categorie: "Adulte", dateFin: "2024-01-25", joursRestants: 4 },
-    { nom: "Petit", prenom: "Lisa", categorie: "Femme", dateFin: "2024-01-27", joursRestants: 6 },
-    { nom: "Garcia", prenom: "Miguel", categorie: "Adulte", dateFin: "2024-01-28", joursRestants: 7 },
-  ];
-
-  const totalClients = categoriesData.reduce((sum, cat) => sum + cat.value, 0);
-  const totalRevenus = revenusData.reduce((sum, month) => sum + month.revenus, 0);
-  const moyenneRevenus = totalRevenus / revenusData.length;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Statistiques</h1>
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
 
   const getCategoryBadge = (categorie: string) => {
     const colors = {

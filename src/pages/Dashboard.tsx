@@ -1,43 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, UserX, Clock, DollarSign } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 export default function Dashboard() {
-  // Mock data for demonstration
-  const stats = {
-    totalInscriptions: {
-      femmes: 45,
-      enfants: 32,
-      adultes: 67,
-      total: 144
-    },
-    inscriptionsExpirees: 12,
-    expirationProche: 8,
-    revenus: 15420
-  };
+  const { stats, pieData, barData, dernieresInscriptions, isLoading } = useDashboardData();
 
-  const pieData = [
-    { name: "Femmes", value: stats.totalInscriptions.femmes, color: "hsl(var(--chart-1))" },
-    { name: "Enfants", value: stats.totalInscriptions.enfants, color: "hsl(var(--chart-2))" },
-    { name: "Adultes", value: stats.totalInscriptions.adultes, color: "hsl(var(--chart-3))" },
-  ];
-
-  const barData = [
-    { mois: "Jan", revenus: 12000 },
-    { mois: "Fév", revenus: 14500 },
-    { mois: "Mar", revenus: 13200 },
-    { mois: "Avr", revenus: 15420 },
-    { mois: "Mai", revenus: 16800 },
-    { mois: "Juin", revenus: 18200 },
-  ];
-
-  const dernieresInscriptions = [
-    { nom: "Dupont", prenom: "Marie", categorie: "Femme", date: "2024-01-15", offre: "Fitness" },
-    { nom: "Martin", prenom: "Pierre", categorie: "Adulte", date: "2024-01-14", offre: "Musculation" },
-    { nom: "Dubois", prenom: "Sophie", categorie: "Enfant", date: "2024-01-13", offre: "Natation" },
-    { nom: "Moreau", prenom: "Jean", categorie: "Adulte", date: "2024-01-12", offre: "CrossFit" },
-    { nom: "Leroy", prenom: "Emma", categorie: "Femme", date: "2024-01-11", offre: "Yoga" },
-  ];
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
 
   const StatCard = ({ title, value, icon: Icon, description }: any) => (
     <Card>
