@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Search, Filter, Edit, Trash2, RotateCcw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import InscriptionForm from "@/components/InscriptionForm";
@@ -26,6 +27,7 @@ interface Inscription {
 export default function Inscriptions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
+  const [selectedSpecialite, setSelectedSpecialite] = useState("Toutes");
   const [inscriptions, setInscriptions] = useState<Inscription[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInscription, setEditingInscription] = useState<Inscription | null>(null);
@@ -185,6 +187,9 @@ export default function Inscriptions() {
   };
 
   const categories = ["Tous", "Femme", "Enfant", "Adulte"];
+  
+  // Get unique specialties for dropdown
+  const specialites = ["Toutes", ...Array.from(new Set(inscriptions.map(inscription => inscription.specialite)))];
 
   const filteredInscriptions = inscriptions.filter(inscription => {
     const matchesSearch = inscription.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -192,7 +197,8 @@ export default function Inscriptions() {
                          inscription.specialite.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          inscription.telephone.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "Tous" || inscription.categorie === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesSpecialite = selectedSpecialite === "Toutes" || inscription.specialite === selectedSpecialite;
+    return matchesSearch && matchesCategory && matchesSpecialite;
   });
 
   const getStatusBadge = (dateFin: string) => {
@@ -268,16 +274,31 @@ export default function Inscriptions() {
             </div>
             <div className="flex gap-2">
               <Filter className="h-4 w-4 mt-3 text-muted-foreground" />
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category)}
-                  size="sm"
-                >
-                  {category}
-                </Button>
-              ))}
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedSpecialite} onValueChange={setSelectedSpecialite}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Spécialité" />
+                </SelectTrigger>
+                <SelectContent>
+                  {specialites.map((specialite) => (
+                    <SelectItem key={specialite} value={specialite}>
+                      {specialite}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
