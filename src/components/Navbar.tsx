@@ -7,11 +7,13 @@ import {
   LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "./AuthProvider";
 
 export function Navbar() {
-  const handleLogout = () => {
-    // TODO: Implement logout functionality
-    console.log("Logout clicked");
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
   };
 
   const navItems = [
@@ -53,7 +55,7 @@ export function Navbar() {
           {/* Logout Button */}
           <Button
             onClick={handleLogout}
-            className="bg-gym-yellow text-black hover:bg-gym-yellow/90 font-medium"
+            className="bg-yellow-500 hover:bg-yellow-600 text-white font-medium"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Déconnexion
