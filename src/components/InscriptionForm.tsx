@@ -354,37 +354,18 @@ export default function InscriptionForm({ onSuccess, editingInscription }: Inscr
           {categorie === 'Enfant' ? (
             <div className="space-y-2">
               <Label htmlFor="dateNaissance">Date de naissance *</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.dateNaissance && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.dateNaissance ? format(formData.dateNaissance, "dd/MM/yyyy") : "Sélectionner une date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.dateNaissance}
-                    onSelect={(date) => setFormData({...formData, dateNaissance: date})}
-                    initialFocus
-                    className="pointer-events-auto"
-                    disabled={(date) => {
-                      const today = new Date();
-                      const minDate = new Date();
-                      minDate.setFullYear(today.getFullYear() - 15);
-                      const maxDate = new Date();
-                      maxDate.setFullYear(today.getFullYear() - 3);
-                      return date > maxDate || date < minDate;
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
+              <Input
+                id="dateNaissance"
+                type="date"
+                value={formData.dateNaissance ? format(formData.dateNaissance, 'yyyy-MM-dd') : ''}
+                onChange={(e) => {
+                  const date = e.target.value ? new Date(e.target.value) : undefined;
+                  setFormData({...formData, dateNaissance: date});
+                }}
+                max={format(new Date(new Date().getFullYear() - 3, new Date().getMonth(), new Date().getDate()), 'yyyy-MM-dd')}
+                min={format(new Date(new Date().getFullYear() - 15, new Date().getMonth(), new Date().getDate()), 'yyyy-MM-dd')}
+                required
+              />
               {formData.dateNaissance && (
                 <p className="text-sm text-muted-foreground">
                   Âge: {calculateAge(formData.dateNaissance)} ans
