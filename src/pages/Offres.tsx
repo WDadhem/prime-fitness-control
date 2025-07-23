@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Edit, Trash2, DollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +35,7 @@ export default function Offres() {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOffre, setEditingOffre] = useState<Offre | null>(null);
+  const [activeTab, setActiveTab] = useState("Enfant");
   const [formData, setFormData] = useState<FormData>({
     nom: "",
     coach: "",
@@ -201,6 +203,66 @@ export default function Offres() {
     );
   };
 
+  const getOffresByCategory = (category: string) => {
+    return offres.filter(offre => offre.categorie === category);
+  };
+
+  const renderOffresGrid = (offresList: Offre[]) => (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {offresList.map((offre) => (
+        <Card key={offre.id} className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <CardTitle className="text-lg">{offre.nom}</CardTitle>
+              {getCategoryBadge(offre.categorie)}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-primary">
+                {offre.prix.toFixed(0)} DT
+              </span>
+              <span className="text-sm text-muted-foreground">
+                /mois
+              </span>
+            </div>
+
+            {offre.coach && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-medium">Coach:</span>
+                <span className="text-sm text-muted-foreground">{offre.coach}</span>
+              </div>
+            )}
+
+            <p className="text-sm text-muted-foreground">
+              {offre.description || "Aucune description"}
+            </p>
+
+            <div className="flex justify-between space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={() => handleEdit(offre)}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Modifier
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-destructive hover:text-destructive"
+                onClick={() => handleDelete(offre.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -354,65 +416,68 @@ export default function Offres() {
         </Card>
       </div>
 
-      {/* Debug info */}
-      <div className="text-sm text-gray-500">
-        Debug: {offres.length} offres chargées
-      </div>
-
-      {/* Offres Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {offres.map((offre) => (
-          <Card key={offre.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{offre.nom}</CardTitle>
-                {getCategoryBadge(offre.categorie)}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-primary">
-                  {offre.prix.toFixed(0)} DT
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  /mois
-                </span>
-              </div>
-
-              {offre.coach && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">Coach:</span>
-                  <span className="text-sm text-muted-foreground">{offre.coach}</span>
+      {/* Offres par catégorie */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="Enfant">Offres Enfants</TabsTrigger>
+          <TabsTrigger value="Femme">Offres Femmes</TabsTrigger>
+          <TabsTrigger value="Adulte">Offres Adultes</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="Enfant" className="mt-6">
+          {getOffresByCategory("Enfant").length > 0 ? (
+            renderOffresGrid(getOffresByCategory("Enfant"))
+          ) : (
+            <Card className="border-dashed border-2">
+              <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Plus className="w-12 h-12 text-muted-foreground" />
+                <div className="text-center">
+                  <h3 className="text-lg font-medium">Aucune offre enfant trouvée</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Commencez par créer votre première offre pour enfants
+                  </p>
                 </div>
-              )}
-
-              <p className="text-sm text-muted-foreground">
-                {offre.description || "Aucune description"}
-              </p>
-
-              <div className="flex justify-between space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => handleEdit(offre)}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Modifier
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(offre.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="Femme" className="mt-6">
+          {getOffresByCategory("Femme").length > 0 ? (
+            renderOffresGrid(getOffresByCategory("Femme"))
+          ) : (
+            <Card className="border-dashed border-2">
+              <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Plus className="w-12 h-12 text-muted-foreground" />
+                <div className="text-center">
+                  <h3 className="text-lg font-medium">Aucune offre femme trouvée</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Commencez par créer votre première offre pour femmes
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="Adulte" className="mt-6">
+          {getOffresByCategory("Adulte").length > 0 ? (
+            renderOffresGrid(getOffresByCategory("Adulte"))
+          ) : (
+            <Card className="border-dashed border-2">
+              <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Plus className="w-12 h-12 text-muted-foreground" />
+                <div className="text-center">
+                  <h3 className="text-lg font-medium">Aucune offre adulte trouvée</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Commencez par créer votre première offre pour adultes
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {offres.length === 0 && !loading && (
         <Card className="border-dashed border-2">
