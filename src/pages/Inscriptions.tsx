@@ -28,6 +28,7 @@ export default function Inscriptions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [selectedSpecialite, setSelectedSpecialite] = useState("Toutes");
+  const [selectedStatus, setSelectedStatus] = useState("Tous");
   const [inscriptions, setInscriptions] = useState<Inscription[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInscription, setEditingInscription] = useState<Inscription | null>(null);
@@ -65,6 +66,11 @@ export default function Inscriptions() {
     setIsDialogOpen(false);
     setEditingInscription(null);
     fetchInscriptions();
+  };
+
+  const handleAddNew = () => {
+    setEditingInscription(null);
+    setIsDialogOpen(true);
   };
 
   const handleEdit = (inscription: Inscription) => {
@@ -187,9 +193,26 @@ export default function Inscriptions() {
   };
 
   const categories = ["Tous", "Femme", "Enfant", "Adulte"];
+  const statuses = ["Tous", "Active", "Expire bientôt", "Expirée"];
   
   // Get unique specialties for dropdown
   const specialites = ["Toutes", ...Array.from(new Set(inscriptions.map(inscription => inscription.specialite)))];
+
+  // Helper function to get inscription status
+  const getInscriptionStatus = (dateFin: string) => {
+    const today = new Date();
+    const endDate = new Date(dateFin);
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return "Expirée";
+    } else if (diffDays <= 7) {
+      return "Expire bientôt";
+    } else {
+      return "Active";
+    }
+  };
 
   const filteredInscriptions = inscriptions.filter(inscription => {
     const matchesSearch = inscription.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -198,7 +221,9 @@ export default function Inscriptions() {
                          inscription.telephone.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "Tous" || inscription.categorie === selectedCategory;
     const matchesSpecialite = selectedSpecialite === "Toutes" || inscription.specialite === selectedSpecialite;
-    return matchesSearch && matchesCategory && matchesSpecialite;
+    const inscriptionStatus = getInscriptionStatus(inscription.date_fin);
+    const matchesStatus = selectedStatus === "Tous" || inscriptionStatus === selectedStatus;
+    return matchesSearch && matchesCategory && matchesSpecialite && matchesStatus;
   });
 
   const getStatusBadge = (dateFin: string) => {
@@ -238,21 +263,24 @@ export default function Inscriptions() {
             Gérez les inscriptions de vos clients
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-gym-yellow text-black hover:bg-gym-yellow/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter une inscription
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <InscriptionForm 
-              onSuccess={handleFormSuccess} 
-              editingInscription={editingInscription}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button 
+          onClick={handleAddNew}
+          className="bg-gym-yellow text-black hover:bg-gym-yellow/90"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter une inscription
+        </Button>
       </div>
+
+      {/* Modal Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <InscriptionForm 
+            onSuccess={handleFormSuccess} 
+            editingInscription={editingInscription}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Search and Filters */}
       <Card>
@@ -295,6 +323,19 @@ export default function Inscriptions() {
                   {specialites.map((specialite) => (
                     <SelectItem key={specialite} value={specialite}>
                       {specialite}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
                     </SelectItem>
                   ))}
                 </SelectContent>
