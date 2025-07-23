@@ -124,11 +124,60 @@ export const useDashboardData = () => {
       offre: inscription.specialite,
     }));
 
+  // Inscriptions expirées
+  const inscriptionsExpireesList = allInscriptions
+    .filter(inscription => new Date(inscription.date_fin) < today)
+    .sort((a, b) => new Date(b.date_fin).getTime() - new Date(a.date_fin).getTime())
+    .map(inscription => ({
+      nom: inscription.nom,
+      prenom: inscription.prenom,
+      categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
+      dateFin: new Date(inscription.date_fin).toLocaleDateString('fr-FR'),
+      offre: inscription.specialite,
+      telephone: inscription.telephone,
+    }));
+
+  // Inscriptions bientôt expirées (dans les 7 prochains jours)
+  const inscriptionsBientotExpireesList = allInscriptions
+    .filter(inscription => {
+      const dateFin = new Date(inscription.date_fin);
+      return dateFin >= today && dateFin <= sevenDaysFromNow;
+    })
+    .sort((a, b) => new Date(a.date_fin).getTime() - new Date(b.date_fin).getTime())
+    .map(inscription => ({
+      nom: inscription.nom,
+      prenom: inscription.prenom,
+      categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
+      dateFin: new Date(inscription.date_fin).toLocaleDateString('fr-FR'),
+      offre: inscription.specialite,
+      telephone: inscription.telephone,
+    }));
+
+  // Statistiques pour les inscriptions expirées
+  const statsExpirees = {
+    total: inscriptionsExpireesList.length,
+    femmes: inscriptionsExpireesList.filter(i => i.categorie === 'Femme').length,
+    enfants: inscriptionsExpireesList.filter(i => i.categorie === 'Enfant').length,
+    adultes: inscriptionsExpireesList.filter(i => i.categorie === 'Adulte').length,
+  };
+
+  // Statistiques pour les inscriptions bientôt expirées
+  const statsBientotExpirees = {
+    total: inscriptionsBientotExpireesList.length,
+    femmes: inscriptionsBientotExpireesList.filter(i => i.categorie === 'Femme').length,
+    enfants: inscriptionsBientotExpireesList.filter(i => i.categorie === 'Enfant').length,
+    adultes: inscriptionsBientotExpireesList.filter(i => i.categorie === 'Adulte').length,
+  };
+
   return {
     stats,
     pieData,
     barData,
     dernieresInscriptions,
-    isLoading: false, // Vous pouvez ajouter une logique de loading si nécessaire
+    inscriptionsExpireesList: inscriptionsExpireesList.slice(0, 7),
+    inscriptionsBientotExpireesList: inscriptionsBientotExpireesList.slice(0, 7),
+    statsExpirees,
+    statsBientotExpirees,
+    isLoading: false,
   };
 };
