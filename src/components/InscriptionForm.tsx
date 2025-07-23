@@ -66,16 +66,41 @@ export default function InscriptionForm({ onSuccess, editingInscription }: Inscr
     { value: "12", label: "1 an", multiplier: 10 }
   ];
 
+  // Function to calculate age from date of birth
+  const calculateAge = (dateOfBirth: Date) => {
+    const today = new Date();
+    let age = today.getFullYear() - dateOfBirth.getFullYear();
+    const monthDiff = today.getMonth() - dateOfBirth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dateOfBirth.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Function to calculate date of birth from age
+  const calculateDateOfBirth = (age: number) => {
+    const today = new Date();
+    const birthYear = today.getFullYear() - age;
+    return new Date(birthYear, today.getMonth(), today.getDate());
+  };
+
   // Effect pour charger les données d'édition
   useEffect(() => {
     if (editingInscription) {
       setCategorie(editingInscription.categorie);
+      
+      // Pour les enfants, calculer la date de naissance à partir de l'âge
+      let dateNaissance: Date | undefined = undefined;
+      if (editingInscription.categorie === 'Enfant' && editingInscription.age) {
+        dateNaissance = calculateDateOfBirth(editingInscription.age);
+      }
+      
       setFormData({
         nom: editingInscription.nom,
         prenom: editingInscription.prenom,
         age: editingInscription.age ? editingInscription.age.toString() : "",
         telephone: editingInscription.telephone,
-        dateNaissance: undefined,
+        dateNaissance: dateNaissance,
         etatSante: "",
         specialite: editingInscription.specialite
       });
@@ -90,6 +115,14 @@ export default function InscriptionForm({ onSuccess, editingInscription }: Inscr
       setDuree(diffMonths.toString());
     }
   }, [editingInscription]);
+
+  // Effect pour calculer l'âge automatiquement pour les enfants
+  useEffect(() => {
+    if (categorie === 'Enfant' && formData.dateNaissance) {
+      const age = calculateAge(formData.dateNaissance);
+      setFormData(prev => ({...prev, age: age.toString()}));
+    }
+  }, [formData.dateNaissance, categorie]);
 
   useEffect(() => {
     if (categorie) {
@@ -154,10 +187,37 @@ export default function InscriptionForm({ onSuccess, editingInscription }: Inscr
       return;
     }
 
+    // Validation spécifique pour les enfants
+    if (categorie === 'Enfant') {
+      if (!formData.dateNaissance) {
+        toast({
+          title: "Erreur",
+          description: "Veuillez sélectionner la date de naissance de l'enfant",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      const age = calculateAge(formData.dateNaissance);
+      if (age < 3 || age > 15) {
+        toast({
+          title: "Erreur",
+          description: "L'âge de l'enfant doit être compris entre 3 et 15 ans",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    // Calculer l'âge pour les enfants ou utiliser l'âge saisi pour les autres
+    const ageToSave = categorie === 'Enfant' && formData.dateNaissance 
+      ? calculateAge(formData.dateNaissance) 
+      : parseInt(formData.age);
+
     const inscriptionData = {
       nom: formData.nom,
       prenom: formData.prenom,
-      age: categorie === 'Enfant' ? null : parseInt(formData.age),
+      age: ageToSave,
       telephone: formData.telephone,
       specialite: selectedOffre.nom,
       date_debut: format(dateDebut, 'yyyy-MM-dd'),
@@ -292,7 +352,7 @@ export default function InscriptionForm({ onSuccess, editingInscription }: Inscr
           </div>
 
           {categorie === 'Enfant' ? (
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="dateNaissance">Date de naissance *</Label>
               <Popover>
                 <PopoverTrigger asChild>
@@ -314,9 +374,25 @@ export default function InscriptionForm({ onSuccess, editingInscription }: Inscr
                     onSelect={(date) => setFormData({...formData, dateNaissance: date})}
                     initialFocus
                     className="pointer-events-auto"
+                    disabled={(date) => {
+                      const today = new Date();
+                      const minDate = new Date();
+                      minDate.setFullYear(today.getFullYear() - 15);
+                      const maxDate = new Date();
+                      maxDate.setFullYear(today.getFullYear() - 3);
+                      return date > maxDate || date < minDate;
+                    }}
                   />
                 </PopoverContent>
               </Popover>
+              {formData.dateNaissance && (
+                <p className="text-sm text-muted-foreground">
+                  Âge: {calculateAge(formData.dateNaissance)} ans
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                L'enfant doit avoir entre 3 et 15 ans
+              </p>
             </div>
           ) : (
             <div>
