@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ interface Inscription {
 }
 
 export default function Inscriptions() {
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [selectedSpecialite, setSelectedSpecialite] = useState("Toutes");
@@ -36,7 +38,15 @@ export default function Inscriptions() {
 
   useEffect(() => {
     fetchInscriptions();
-  }, []);
+    
+    // Gérer les filtres depuis l'URL
+    const filterParam = searchParams.get('filter');
+    if (filterParam === 'expired') {
+      setSelectedStatus('Expirée');
+    } else if (filterParam === 'expiring') {
+      setSelectedStatus('Expire bientôt');
+    }
+  }, [searchParams]);
 
   const fetchInscriptions = async () => {
     try {

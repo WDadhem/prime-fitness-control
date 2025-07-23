@@ -4,8 +4,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Users, UserX, Clock, DollarSign, AlertTriangle, CalendarX } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useDashboardData } from "@/hooks/useDashboardData";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { 
     stats, 
     pieData, 
@@ -17,6 +19,14 @@ export default function Dashboard() {
     statsBientotExpirees,
     isLoading 
   } = useDashboardData();
+
+  const handleVoirPlusExpirees = () => {
+    navigate('/inscriptions?filter=expired');
+  };
+
+  const handleVoirPlusBientotExpirees = () => {
+    navigate('/inscriptions?filter=expiring');
+  };
 
   if (isLoading) {
     return (
@@ -91,7 +101,12 @@ export default function Dashboard() {
                 <AlertTriangle className="h-5 w-5 text-destructive" />
                 <CardTitle className="text-destructive">Inscriptions Expirées</CardTitle>
               </div>
-              <span className="text-2xl font-bold text-destructive">{statsExpirees.total}</span>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={handleVoirPlusExpirees}>
+                  Voir plus
+                </Button>
+                <span className="text-2xl font-bold text-destructive">{statsExpirees.total}</span>
+              </div>
             </div>
             <div className="flex gap-4 text-sm text-muted-foreground">
               <span>{statsExpirees.femmes} femmes</span>
@@ -130,13 +145,6 @@ export default function Dashboard() {
                 ))}
               </TableBody>
             </Table>
-            {statsExpirees.total > 7 && (
-              <div className="mt-4 text-center">
-                <Button variant="outline" size="sm">
-                  Voir tout ({statsExpirees.total})
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
 
@@ -148,7 +156,12 @@ export default function Dashboard() {
                 <CalendarX className="h-5 w-5 text-orange-500" />
                 <CardTitle className="text-orange-600">Expiration Proche</CardTitle>
               </div>
-              <span className="text-2xl font-bold text-orange-600">{statsBientotExpirees.total}</span>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={handleVoirPlusBientotExpirees}>
+                  Voir plus
+                </Button>
+                <span className="text-2xl font-bold text-orange-600">{statsBientotExpirees.total}</span>
+              </div>
             </div>
             <div className="flex gap-4 text-sm text-muted-foreground">
               <span>{statsBientotExpirees.femmes} femmes</span>
@@ -187,13 +200,6 @@ export default function Dashboard() {
                 ))}
               </TableBody>
             </Table>
-            {statsBientotExpirees.total > 7 && (
-              <div className="mt-4 text-center">
-                <Button variant="outline" size="sm">
-                  Voir tout ({statsBientotExpirees.total})
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
