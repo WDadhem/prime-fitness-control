@@ -1,234 +1,321 @@
-import { useState, useEffect } from "react";
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
-import { Calendar as CalendarDate } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Users, UserX, Clock, DollarSign, AlertTriangle, CalendarX } from "lucide-react";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { useNavigate } from "react-router-dom";
 import InscriptionDetailModal from "@/components/InscriptionDetailModal";
 
-interface Inscription {
-  id: string;
-  nom: string;
-  prenom: string;
-  age: number | null;
-  telephone: string;
-  specialite: string;
-  date_debut: string;
-  date_fin: string;
-  duree_abonnement: string;
-  prix_total: number;
-  categorie: string;
-}
-
 export default function Dashboard() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [searchTerm, setSearchTerm] = useState("");
-  const [inscriptions, setInscriptions] = useState<Inscription[]>([]);
-  const [selectedInscription, setSelectedInscription] = useState<Inscription | null>(null);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [selectedInscription, setSelectedInscription] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const { 
+    stats, 
+    pieData, 
+    barData, 
+    dernieresInscriptions, 
+    inscriptionsExpireesList,
+    inscriptionsBientotExpireesList,
+    statsExpirees,
+    statsBientotExpirees,
+    isLoading 
+  } = useDashboardData();
 
-  useEffect(() => {
-    fetchInscriptions();
-  }, []);
+  const handleVoirPlusExpirees = () => {
+    navigate('/inscriptions?filter=expired');
+  };
 
-  const fetchInscriptions = async () => {
-    try {
-      const [enfantsData, adultesData, femmesData] = await Promise.all([
-        supabase.from('inscriptions_enfants').select('*'),
-        supabase.from('inscriptions_adultes').select('*'),
-        supabase.from('inscriptions_femmes').select('*')
-      ]);
-
-      const allInscriptions: Inscription[] = [
-        ...(enfantsData.data || []).map(item => ({ ...item, categorie: 'Enfant' })),
-        ...(adultesData.data || []).map(item => ({ ...item, categorie: 'Adulte' })),
-        ...(femmesData.data || []).map(item => ({ ...item, categorie: 'Femme' }))
-      ];
-
-      setInscriptions(allInscriptions);
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les inscriptions",
-        variant: "destructive"
-      });
-    }
+  const handleVoirPlusBientotExpirees = () => {
+    navigate('/inscriptions?filter=expiring');
   };
 
   const handleInscriptionClick = (inscription: any) => {
     setSelectedInscription(inscription);
-    setIsDetailModalOpen(true);
+    setIsModalOpen(true);
   };
 
-  const handleDetailModalEdit = (inscription: any) => {
-    setIsDetailModalOpen(false);
-    toast({
-      title: "Redirection",
-      description: "Veuillez aller à la page Inscriptions pour modifier cette inscription"
-    });
-  };
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleDetailModalProlonger = (inscription: any) => {
-    setIsDetailModalOpen(false);
-    toast({
-      title: "Redirection",
-      description: "Veuillez aller à la page Inscriptions pour prolonger cette inscription"
-    });
-  };
-
-  const handleDetailModalDelete = (inscription: any) => {
-    setIsDetailModalOpen(false);
-    toast({
-      title: "Redirection",
-      description: "Veuillez aller à la page Inscriptions pour supprimer cette inscription"
-    });
-  };
-
-  const filteredInscriptions = inscriptions.filter(inscription => {
-    const matchesSearch = inscription.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inscription.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inscription.specialite.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         inscription.telephone.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
-  });
+  const StatCard = ({ title, value, icon: Icon, description }: any) => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        {description && (
+          <p className="text-xs text-muted-foreground">{description}</p>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Tableau de bord</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
-          Suivez l'activité récente de votre salle de sport ici.
+          Vue d'ensemble de votre salle de sport
         </p>
       </div>
+
+      {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Inscriptions"
+          value={stats.totalInscriptions.total}
+          icon={Users}
+          description={`${stats.totalInscriptions.femmes} femmes, ${stats.totalInscriptions.enfants} enfants, ${stats.totalInscriptions.adultes} adultes`}
+        />
+        <StatCard
+          title="Inscriptions Expirées"
+          value={stats.inscriptionsExpirees}
+          icon={UserX}
+          description="Nécessitent un renouvellement"
+        />
+        <StatCard
+          title="Expiration Proche"
+          value={stats.expirationProche}
+          icon={Clock}
+          description="Moins de 7 jours"
+        />
+        <StatCard
+          title="Inscriptions Actives"
+          value={stats.inscriptionsActives}
+          icon={Users}
+          description="En cours de validité"
+        />
+      </div>
+
+      {/* Inscriptions Expirées et Bientôt Expirées */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Inscriptions Expirées */}
         <Card>
           <CardHeader>
-            <CardTitle>Inscriptions du jour</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <CardTitle className="text-destructive">Inscriptions Expirées</CardTitle>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={handleVoirPlusExpirees}>
+                  Voir plus
+                </Button>
+                <span className="text-2xl font-bold text-destructive">{statsExpirees.total}</span>
+              </div>
+            </div>
+            <div className="flex gap-4 text-sm text-muted-foreground">
+              <span>{statsExpirees.femmes} femmes</span>
+              <span>{statsExpirees.enfants} enfants</span>
+              <span>{statsExpirees.adultes} adultes</span>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-2xl font-semibold">12</p>
-            <p className="text-muted-foreground">
-              Nombre total d'inscriptions aujourd'hui
-            </p>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Date fin</TableHead>
+                  <TableHead>Téléphone</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inscriptionsExpireesList.map((inscription, index) => (
+                  <TableRow 
+                    key={index} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleInscriptionClick(inscription)}
+                  >
+                    <TableCell className="font-medium">
+                      {inscription.prenom} {inscription.nom}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        inscription.categorie === 'Femme' ? 'bg-pink-100 text-pink-800' :
+                        inscription.categorie === 'Enfant' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {inscription.categorie}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-destructive">{new Date(inscription.date_fin).toLocaleDateString('fr-FR')}</TableCell>
+                    <TableCell>{inscription.telephone}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
+
+        {/* Inscriptions Bientôt Expirées */}
         <Card>
           <CardHeader>
-            <CardTitle>Revenu mensuel</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarX className="h-5 w-5 text-orange-500" />
+                <CardTitle className="text-orange-600">Expiration Proche</CardTitle>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={handleVoirPlusBientotExpirees}>
+                  Voir plus
+                </Button>
+                <span className="text-2xl font-bold text-orange-600">{statsBientotExpirees.total}</span>
+              </div>
+            </div>
+            <div className="flex gap-4 text-sm text-muted-foreground">
+              <span>{statsBientotExpirees.femmes} femmes</span>
+              <span>{statsBientotExpirees.enfants} enfants</span>
+              <span>{statsBientotExpirees.adultes} adultes</span>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-2xl font-semibold">2,500 DT</p>
-            <p className="text-muted-foreground">
-              Revenu total généré ce mois-ci
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Nouveaux clients</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-2xl font-semibold">34</p>
-            <p className="text-muted-foreground">
-              Nombre de nouveaux clients ce mois-ci
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Abonnements actifs</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-2xl font-semibold">150</p>
-            <p className="text-muted-foreground">
-              Nombre total d'abonnements actifs
-            </p>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nom</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Date fin</TableHead>
+                  <TableHead>Téléphone</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {inscriptionsBientotExpireesList.map((inscription, index) => (
+                  <TableRow 
+                    key={index} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleInscriptionClick(inscription)}
+                  >
+                    <TableCell className="font-medium">
+                      {inscription.prenom} {inscription.nom}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        inscription.categorie === 'Femme' ? 'bg-pink-100 text-pink-800' :
+                        inscription.categorie === 'Enfant' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {inscription.categorie}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-orange-600 font-medium">{new Date(inscription.date_fin).toLocaleDateString('fr-FR')}</TableCell>
+                    <TableCell>{inscription.telephone}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
 
+      {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Calendrier</CardTitle>
+            <CardTitle>Répartition des Inscriptions</CardTitle>
           </CardHeader>
-          <CardContent className="border p-3 rounded-md">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  className={cn(
-                    "w-[300px] justify-start text-left font-normal",
-                    !date && "text-muted-foreground"
-                  )}
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
                 >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {date ? format(date, "PPP") : <span>Choisir une date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarDate
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  disabled={(date) =>
-                    date > new Date() || date < new Date("2023-01-01")
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Recherche rapide</CardTitle>
+            <CardTitle>Revenus Mensuels</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="relative">
-              <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher une inscription..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="mt-4 space-y-2">
-              {filteredInscriptions.map((inscription) => (
-                <div 
-                  key={inscription.id} 
-                  className="border p-3 rounded-md cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleInscriptionClick(inscription)}
-                >
-                  <p className="font-medium">{inscription.nom} {inscription.prenom}</p>
-                  <p className="text-sm text-muted-foreground">{inscription.specialite}</p>
-                </div>
-              ))}
-              {filteredInscriptions.length === 0 && (
-                <p className="text-sm text-muted-foreground">Aucune inscription correspondante.</p>
-              )}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="mois" />
+                <YAxis />
+                <Tooltip formatter={(value) => [`${value} DT`, "Revenus"]} />
+                <Bar dataKey="revenus" fill="hsl(var(--primary))" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Detail Modal */}
+      {/* Recent Inscriptions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>5 Dernières Inscriptions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Nom</th>
+                  <th className="text-left p-2">Prénom</th>
+                  <th className="text-left p-2">Catégorie</th>
+                  <th className="text-left p-2">Date</th>
+                  <th className="text-left p-2">Offre</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dernieresInscriptions.map((inscription, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="p-2">{inscription.nom}</td>
+                    <td className="p-2">{inscription.prenom}</td>
+                    <td className="p-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        inscription.categorie === 'Femme' ? 'bg-pink-100 text-pink-800' :
+                        inscription.categorie === 'Enfant' ? 'bg-blue-100 text-blue-800' :
+                        'bg-green-100 text-green-800'
+                      }`}>
+                        {inscription.categorie}
+                      </span>
+                    </td>
+                    <td className="p-2">{inscription.date}</td>
+                    <td className="p-2">{inscription.offre}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Modal pour les détails */}
       <InscriptionDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => setIsDetailModalOpen(false)}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         inscription={selectedInscription}
-        onEdit={handleDetailModalEdit}
-        onProlonger={handleDetailModalProlonger}
-        onDelete={handleDetailModalDelete}
       />
     </div>
   );
