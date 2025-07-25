@@ -253,7 +253,7 @@ export default function Inscriptions() {
         </div>
         <Button 
           onClick={handleAddNew}
-          className="bg-gym-yellow text-black hover:bg-gym-yellow/90"
+          className="bg-gym-yellow text-white hover:bg-gym-yellow/90"
         >
           <Plus className="w-4 h-4 mr-2" />
           Ajouter une inscription
@@ -376,54 +376,84 @@ export default function Inscriptions() {
                         <div className="text-sm text-muted-foreground">{inscription.age} ans</div>
                       </div>
                     </td>
-                    <td className="p-3 text-sm">{inscription.telephone}</td>
-                    <td className="p-3">
+                    <td 
+                      className="p-3 text-sm cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
+                      {inscription.telephone}
+                    </td>
+                    <td 
+                      className="p-3 cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
                       {getCategoryBadge(inscription.categorie)}
                     </td>
-                    <td className="p-3">{inscription.specialite}</td>
-                     <td className="p-3">
-                       <div className="text-sm">
-                         <div>Du {inscription.date_debut}</div>
-                         <div>Au {inscription.date_fin}</div>
-                         <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
-                       </div>
-                     </td>
-                     <td className="p-3">{inscription.prix_total} DT</td>
-                     <td className="p-3">
-                       {getStatusBadge(inscription.date_fin)}
-                     </td>
-                     <td className="p-3">
-                       <div className="flex gap-1">
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => handleEdit(inscription)}
-                         >
-                           <Edit className="w-4 h-4 mr-1" />
-                           Modifier
-                         </Button>
-                         <DropdownMenu>
-                           <DropdownMenuTrigger asChild>
-                             <Button variant="outline" size="sm">
-                               <MoreHorizontal className="w-4 h-4" />
-                             </Button>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end">
-                             <DropdownMenuItem onClick={() => handleProlonger(inscription)}>
-                               <Clock className="w-4 h-4 mr-2" />
-                               Prolonger
-                             </DropdownMenuItem>
-                             <DropdownMenuItem 
-                               onClick={() => handleDelete(inscription)}
-                               className="text-destructive focus:text-destructive"
-                             >
-                               <Trash2 className="w-4 h-4 mr-2" />
-                               Supprimer
-                             </DropdownMenuItem>
-                           </DropdownMenuContent>
-                         </DropdownMenu>
-                       </div>
-                     </td>
+                    <td 
+                      className="p-3 cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
+                      {inscription.specialite}
+                    </td>
+                    <td 
+                      className="p-3 cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
+                      <div className="text-sm">
+                        <div>Du {inscription.date_debut}</div>
+                        <div>Au {inscription.date_fin}</div>
+                        <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
+                      </div>
+                    </td>
+                    <td 
+                      className="p-3 cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
+                      {inscription.prix_total} DT
+                    </td>
+                    <td 
+                      className="p-3 cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
+                      {getStatusBadge(inscription.date_fin)}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(inscription);
+                          }}
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Modifier
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleProlonger(inscription);
+                          }}
+                        >
+                          <Clock className="w-4 h-4 mr-1" />
+                          Prolonger
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(inscription);
+                          }}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Supprimer
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
