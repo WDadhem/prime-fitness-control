@@ -94,7 +94,7 @@ export const useStatistiquesData = () => {
     { name: "Adultes", value: inscriptionsAdultes.length, color: "hsl(var(--chart-3))" },
   ];
 
-  // Statistiques par coach (basées sur les spécialités)
+  // Statistiques corrigées par coach (basées sur les spécialités)
   const coachStats = (() => {
     const specialiteStats = new Map();
     
@@ -114,6 +114,43 @@ export const useStatistiquesData = () => {
       clients: stats.clients,
       revenus: stats.revenus,
       specialite: specialite,
+      moyenneParClient: stats.clients > 0 ? (stats.revenus / stats.clients) : 0,
+    }));
+  })();
+
+  // Nouvelles statistiques par spécialité
+  const specialiteStats = (() => {
+    const stats = new Map();
+    
+    allInscriptions.forEach(inscription => {
+      const specialite = inscription.specialite;
+      if (!stats.has(specialite)) {
+        stats.set(specialite, { 
+          clients: 0, 
+          revenus: 0,
+          femmes: 0,
+          enfants: 0,
+          adultes: 0
+        });
+      }
+      
+      const current = stats.get(specialite);
+      current.clients += 1;
+      current.revenus += inscription.prix_total || 0;
+      
+      if (inscription.type === 'femme') current.femmes += 1;
+      else if (inscription.type === 'enfant') current.enfants += 1;
+      else if (inscription.type === 'adulte') current.adultes += 1;
+    });
+
+    return Array.from(stats.entries()).map(([specialite, data]) => ({
+      specialite,
+      clients: data.clients,
+      revenus: data.revenus,
+      femmes: data.femmes,
+      enfants: data.enfants,
+      adultes: data.adultes,
+      moyenneParClient: data.clients > 0 ? (data.revenus / data.clients) : 0,
     }));
   })();
 
@@ -153,6 +190,7 @@ export const useStatistiquesData = () => {
     revenusData,
     categoriesData,
     coachStats,
+    specialiteStats,
     clientsExpires,
     clientsExpirationProche,
     totalClients,
