@@ -1,7 +1,8 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Phone, User, CreditCard, Clock, MapPin } from "lucide-react";
+import { Calendar, Phone, User, CreditCard, Clock, MapPin, Edit, Trash2, RotateCcw } from "lucide-react";
 
 interface InscriptionDetail {
   id: string;
@@ -22,12 +23,18 @@ interface InscriptionDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   inscription: InscriptionDetail | null;
+  onEdit: (inscription: InscriptionDetail) => void;
+  onProlonger: (inscription: InscriptionDetail) => void;
+  onDelete: (inscription: InscriptionDetail) => void;
 }
 
 export default function InscriptionDetailModal({ 
   isOpen, 
   onClose, 
-  inscription 
+  inscription,
+  onEdit,
+  onProlonger,
+  onDelete
 }: InscriptionDetailModalProps) {
   if (!inscription) return null;
 
@@ -123,6 +130,34 @@ export default function InscriptionDetailModal({
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t">
+            <Button
+              onClick={() => onEdit(inscription)}
+              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              Modifier
+            </Button>
+            
+            <Button
+              onClick={() => onProlonger(inscription)}
+              className="flex-1 bg-gym-yellow text-black hover:bg-gym-yellow/90"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Prolonger
+            </Button>
+            
+            <Button
+              onClick={() => onDelete(inscription)}
+              variant="destructive"
+              className="flex-1"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Supprimer
+            </Button>
           </div>
         </div>
       </DialogContent>

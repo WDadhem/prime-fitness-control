@@ -8,10 +8,12 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Plus, Search, Filter, Edit, Trash2, MoreHorizontal, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import InscriptionForm from "@/components/InscriptionForm";
 import ProlongationModal from "@/components/ProlongationModal";
+import InscriptionDetailModal from "@/components/InscriptionDetailModal";
 
 interface Inscription {
   id: string;
@@ -38,6 +40,8 @@ export default function Inscriptions() {
   const [editingInscription, setEditingInscription] = useState<Inscription | null>(null);
   const [prolongationInscription, setProlongationInscription] = useState<Inscription | null>(null);
   const [isProlongationModalOpen, setIsProlongationModalOpen] = useState(false);
+  const [selectedInscription, setSelectedInscription] = useState<Inscription | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -154,6 +158,28 @@ export default function Inscriptions() {
     setProlongationInscription(null);
   };
 
+  const handleInscriptionClick = (inscription: Inscription) => {
+    setSelectedInscription(inscription);
+    setIsDetailModalOpen(true);
+  };
+
+  const handleDetailModalEdit = (inscription: Inscription) => {
+    setIsDetailModalOpen(false);
+    setEditingInscription(inscription);
+    setIsDialogOpen(true);
+  };
+
+  const handleDetailModalProlonger = (inscription: Inscription) => {
+    setIsDetailModalOpen(false);
+    setProlongationInscription(inscription);
+    setIsProlongationModalOpen(true);
+  };
+
+  const handleDetailModalDelete = (inscription: Inscription) => {
+    setIsDetailModalOpen(false);
+    handleDelete(inscription);
+  };
+
   const categories = ["Tous", "Femme", "Enfant", "Adulte"];
   const statuses = ["Tous", "Active", "Expire bientôt", "Expirée"];
   
@@ -264,44 +290,53 @@ export default function Inscriptions() {
             </div>
             <div className="flex gap-2">
               <Filter className="h-4 w-4 mt-3 text-muted-foreground" />
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Genre" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Genre</Label>
+                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Genre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
-              <Select value={selectedSpecialite} onValueChange={setSelectedSpecialite}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Spécialité" />
-                </SelectTrigger>
-                <SelectContent>
-                  {specialites.map((specialite) => (
-                    <SelectItem key={specialite} value={specialite}>
-                      {specialite}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Spécialité</Label>
+                <Select value={selectedSpecialite} onValueChange={setSelectedSpecialite}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Spécialité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {specialites.map((specialite) => (
+                      <SelectItem key={specialite} value={specialite}>
+                        {specialite}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Statut" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Statut</Label>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-[160px]">
+                    <SelectValue placeholder="Statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -332,7 +367,10 @@ export default function Inscriptions() {
               <tbody>
                 {filteredInscriptions.map((inscription) => (
                   <tr key={inscription.id} className="border-b hover:bg-muted/50">
-                    <td className="p-3">
+                    <td 
+                      className="p-3 cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
                       <div>
                         <div className="font-medium">{inscription.nom} {inscription.prenom}</div>
                         <div className="text-sm text-muted-foreground">{inscription.age} ans</div>
@@ -400,6 +438,16 @@ export default function Inscriptions() {
         isOpen={isProlongationModalOpen}
         onClose={() => setIsProlongationModalOpen(false)}
         onSuccess={handleProlongationSuccess}
+      />
+
+      {/* Detail Modal */}
+      <InscriptionDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        inscription={selectedInscription}
+        onEdit={handleDetailModalEdit}
+        onProlonger={handleDetailModalProlonger}
+        onDelete={handleDetailModalDelete}
       />
     </div>
   );
