@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, Filter, Edit, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Filter, Edit, Trash2, MoreHorizontal, Clock } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import InscriptionForm from "@/components/InscriptionForm";
+import ProlongationModal from "@/components/ProlongationModal";
 
 interface Inscription {
   id: string;
@@ -35,6 +36,8 @@ export default function Inscriptions() {
   const [inscriptions, setInscriptions] = useState<Inscription[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInscription, setEditingInscription] = useState<Inscription | null>(null);
+  const [prolongationInscription, setProlongationInscription] = useState<Inscription | null>(null);
+  const [isProlongationModalOpen, setIsProlongationModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -138,6 +141,17 @@ export default function Inscriptions() {
         variant: "destructive"
       });
     }
+  };
+
+  const handleProlonger = (inscription: Inscription) => {
+    setProlongationInscription(inscription);
+    setIsProlongationModalOpen(true);
+  };
+
+  const handleProlongationSuccess = () => {
+    fetchInscriptions();
+    setIsProlongationModalOpen(false);
+    setProlongationInscription(null);
   };
 
   const categories = ["Tous", "Femme", "Enfant", "Adulte"];
@@ -350,14 +364,26 @@ export default function Inscriptions() {
                            <Edit className="w-4 h-4 mr-1" />
                            Modifier
                          </Button>
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           className="text-destructive hover:text-destructive"
-                           onClick={() => handleDelete(inscription)}
-                         >
-                           <Trash2 className="w-4 h-4" />
-                         </Button>
+                         <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                             <Button variant="outline" size="sm">
+                               <MoreHorizontal className="w-4 h-4" />
+                             </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="end">
+                             <DropdownMenuItem onClick={() => handleProlonger(inscription)}>
+                               <Clock className="w-4 h-4 mr-2" />
+                               Prolonger
+                             </DropdownMenuItem>
+                             <DropdownMenuItem 
+                               onClick={() => handleDelete(inscription)}
+                               className="text-destructive focus:text-destructive"
+                             >
+                               <Trash2 className="w-4 h-4 mr-2" />
+                               Supprimer
+                             </DropdownMenuItem>
+                           </DropdownMenuContent>
+                         </DropdownMenu>
                        </div>
                      </td>
                   </tr>
@@ -367,6 +393,14 @@ export default function Inscriptions() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Prolongation Modal */}
+      <ProlongationModal
+        inscription={prolongationInscription}
+        isOpen={isProlongationModalOpen}
+        onClose={() => setIsProlongationModalOpen(false)}
+        onSuccess={handleProlongationSuccess}
+      />
     </div>
   );
 }
