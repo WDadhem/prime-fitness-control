@@ -1,19 +1,13 @@
-
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, UserX, Clock, CheckCircle, AlertTriangle, CalendarX } from "lucide-react";
+import { Users, UserX, Clock, DollarSign, AlertTriangle, CalendarX } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useNavigate } from "react-router-dom";
-import { InscriptionDetailModal } from "@/components/InscriptionDetailModal";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [selectedInscription, setSelectedInscription] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
   const { 
     stats, 
     pieData, 
@@ -32,23 +26,6 @@ export default function Dashboard() {
 
   const handleVoirPlusBientotExpirees = () => {
     navigate('/inscriptions?filter=expiring');
-  };
-
-  const handleInscriptionClick = (inscription: any) => {
-    setSelectedInscription({
-      nom: inscription.nom,
-      prenom: inscription.prenom,
-      age: inscription.age,
-      telephone: inscription.telephone,
-      specialite: inscription.specialite,
-      categorie: inscription.categorie,
-      dateDebut: inscription.dateDebut,
-      dateFin: inscription.dateFin,
-      dureeAbonnement: inscription.dureeAbonnement,
-      prixTotal: inscription.prixTotal,
-      etatSante: inscription.etatSante,
-    });
-    setIsModalOpen(true);
   };
 
   if (isLoading) {
@@ -107,10 +84,10 @@ export default function Dashboard() {
           description="Moins de 7 jours"
         />
         <StatCard
-          title="Inscriptions Actives"
-          value={stats.inscriptionsActives}
-          icon={CheckCircle}
-          description="Abonnements en cours"
+          title="Revenus Totaux"
+          value={`${stats.revenus.toLocaleString()} €`}
+          icon={DollarSign}
+          description="Ce mois-ci"
         />
       </div>
 
@@ -149,11 +126,7 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {inscriptionsExpireesList.map((inscription, index) => (
-                  <TableRow 
-                    key={index} 
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleInscriptionClick(inscription)}
-                  >
+                  <TableRow key={index}>
                     <TableCell className="font-medium">
                       {inscription.prenom} {inscription.nom}
                     </TableCell>
@@ -208,11 +181,7 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {inscriptionsBientotExpireesList.map((inscription, index) => (
-                  <TableRow 
-                    key={index}
-                    className="cursor-pointer hover:bg-muted/50"
-                    onClick={() => handleInscriptionClick(inscription)}
-                  >
+                  <TableRow key={index}>
                     <TableCell className="font-medium">
                       {inscription.prenom} {inscription.nom}
                     </TableCell>
@@ -274,13 +243,14 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mois" />
                 <YAxis />
-                <Tooltip formatter={(value) => [`${value} DT`, "Revenus"]} />
+                <Tooltip formatter={(value) => [`${value} €`, "Revenus"]} />
                 <Bar dataKey="revenus" fill="hsl(var(--primary))" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
+
 
       {/* Recent Inscriptions */}
       <Card>
@@ -322,12 +292,6 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
-
-      <InscriptionDetailModal
-        inscription={selectedInscription}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
   );
 }

@@ -57,7 +57,7 @@ export const useDashboardData = () => {
     },
     inscriptionsExpirees: 0,
     expirationProche: 0,
-    inscriptionsActives: 0,
+    revenus: 0,
   };
 
   const today = new Date();
@@ -76,9 +76,8 @@ export const useDashboardData = () => {
       stats.inscriptionsExpirees++;
     } else if (dateFin <= sevenDaysFromNow) {
       stats.expirationProche++;
-    } else {
-      stats.inscriptionsActives++;
     }
+    stats.revenus += inscription.prix_total || 0;
   });
 
   // Données pour le graphique en secteurs
@@ -125,26 +124,20 @@ export const useDashboardData = () => {
       offre: inscription.specialite,
     }));
 
-  // Inscriptions expirées avec détails complets
+  // Inscriptions expirées
   const inscriptionsExpireesList = allInscriptions
     .filter(inscription => new Date(inscription.date_fin) < today)
     .sort((a, b) => new Date(b.date_fin).getTime() - new Date(a.date_fin).getTime())
     .map(inscription => ({
       nom: inscription.nom,
       prenom: inscription.prenom,
-      age: inscription.age,
       categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
       dateFin: new Date(inscription.date_fin).toLocaleDateString('fr-FR'),
-      dateDebut: new Date(inscription.date_debut).toLocaleDateString('fr-FR'),
       offre: inscription.specialite,
-      specialite: inscription.specialite,
       telephone: inscription.telephone,
-      dureeAbonnement: inscription.duree_abonnement,
-      prixTotal: inscription.prix_total || 0,
-      etatSante: inscription.etat_sante,
     }));
 
-  // Inscriptions bientôt expirées avec détails complets
+  // Inscriptions bientôt expirées (dans les 7 prochains jours)
   const inscriptionsBientotExpireesList = allInscriptions
     .filter(inscription => {
       const dateFin = new Date(inscription.date_fin);
@@ -154,16 +147,10 @@ export const useDashboardData = () => {
     .map(inscription => ({
       nom: inscription.nom,
       prenom: inscription.prenom,
-      age: inscription.age,
       categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
       dateFin: new Date(inscription.date_fin).toLocaleDateString('fr-FR'),
-      dateDebut: new Date(inscription.date_debut).toLocaleDateString('fr-FR'),
       offre: inscription.specialite,
-      specialite: inscription.specialite,
       telephone: inscription.telephone,
-      dureeAbonnement: inscription.duree_abonnement,
-      prixTotal: inscription.prix_total || 0,
-      etatSante: inscription.etat_sante,
     }));
 
   // Statistiques pour les inscriptions expirées

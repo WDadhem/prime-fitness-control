@@ -3,17 +3,19 @@ import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Filter, Edit, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Search, Filter, Edit, Trash2, RotateCcw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import InscriptionForm from "@/components/InscriptionForm";
 
 interface Inscription {
   id: string;
   nom: string;
   prenom: string;
-  age?: number;
+  age: number | null;
   telephone: string;
   specialite: string;
   date_debut: string;
@@ -21,7 +23,6 @@ interface Inscription {
   duree_abonnement: string;
   prix_total: number;
   categorie: string;
-  etat_sante?: string;
 }
 
 export default function Inscriptions() {
@@ -31,13 +32,12 @@ export default function Inscriptions() {
   const [selectedSpecialite, setSelectedSpecialite] = useState("Toutes");
   const [selectedStatus, setSelectedStatus] = useState("Tous");
   const [inscriptions, setInscriptions] = useState<Inscription[]>([]);
-  const [filteredInscriptions, setFilteredInscriptions] = useState<Inscription[]>([]);
-  const [specialites, setSpecialites] = useState<string[]>([]);
-  const [offres, setOffres] = useState<any[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInscription, setEditingInscription] = useState<Inscription | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchInscriptions();
-    fetchOffres();
     
     // Gérer les filtres depuis l'URL
     const filterParam = searchParams.get('filter');
@@ -48,133 +48,206 @@ export default function Inscriptions() {
     }
   }, [searchParams]);
 
-  const fetchOffres = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("offres")
-        .select("*");
-      
-      if (error) throw error;
-      setOffres(data || []);
-    } catch (error) {
-      console.error("Erreur lors de la récupération des offres:", error);
-    }
-  };
-
   const fetchInscriptions = async () => {
     try {
-      const { data: adultes, error: errorAdultes } = await supabase
-        .from("inscriptions_adultes")
-        .select("*");
+      const [enfantsData, adultesData, femmesData] = await Promise.all([
+        supabase.from('inscriptions_enfants').select('*'),
+        supabase.from('inscriptions_adultes').select('*'),
+        supabase.from('inscriptions_femmes').select('*')
+      ]);
 
-      const { data: enfants, error: errorEnfants } = await supabase
-        .from("inscriptions_enfants")
-        .select("*");
-
-      const { data: femmes, error: errorFemmes } = await supabase
-        .from("inscriptions_femmes")
-        .select("*");
-
-      if (errorAdultes) throw errorAdultes;
-      if (errorEnfants) throw errorEnfants;
-      if (errorFemmes) throw errorFemmes;
-
-      const allInscriptions = [
-        ...adultes.map(i => ({ ...i, categorie: 'Adulte' })),
-        ...enfants.map(i => ({ ...i, categorie: 'Enfant' })),
-        ...femmes.map(i => ({ ...i, categorie: 'Femme' })),
+      const allInscriptions: Inscription[] = [
+        ...(enfantsData.data || []).map(item => ({ ...item, categorie: 'Enfant' })),
+        ...(adultesData.data || []).map(item => ({ ...item, categorie: 'Adulte' })),
+        ...(femmesData.data || []).map(item => ({ ...item, categorie: 'Femme' }))
       ];
 
       setInscriptions(allInscriptions);
-      
-      // Extract unique specialites
-      const uniqueSpecialites = [...new Set(allInscriptions.map(i => i.specialite))];
-      setSpecialites(uniqueSpecialites);
     } catch (error) {
-      console.error("Erreur lors de la récupération des inscriptions:", error);
-    }
-  };
-
-  useEffect(() => {
-    let filtered = [...inscriptions];
-
-    // Filtrer par terme de recherche
-    if (searchTerm) {
-      filtered = filtered.filter(inscription =>
-        inscription.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        inscription.prenom.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filtrer par catégorie
-    if (selectedCategory !== "Tous") {
-      filtered = filtered.filter(inscription => inscription.categorie === selectedCategory);
-    }
-
-    // Filtrer par spécialité
-    if (selectedSpecialite !== "Toutes") {
-      filtered = filtered.filter(inscription => inscription.specialite === selectedSpecialite);
-    }
-
-    // Filtrer par statut
-    if (selectedStatus !== "Tous") {
-      filtered = filtered.filter(inscription => {
-        const today = new Date();
-        const finDate = new Date(inscription.date_fin);
-        const diffTime = finDate.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (selectedStatus === "Active") {
-          return diffDays >= 7;
-        } else if (selectedStatus === "Expire bientôt") {
-          return diffDays > 0 && diffDays < 7;
-        } else if (selectedStatus === "Expirée") {
-          return diffDays <= 0;
-        }
-        return true;
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les inscriptions",
+        variant: "destructive"
       });
     }
+  };
 
-    setFilteredInscriptions(filtered);
-  }, [inscriptions, searchTerm, selectedCategory, selectedSpecialite, selectedStatus]);
+  const handleFormSuccess = () => {
+    setIsDialogOpen(false);
+    setEditingInscription(null);
+    fetchInscriptions();
+  };
 
-  const deleteInscription = async (id: string, categorie: string) => {
+  const handleAddNew = () => {
+    setEditingInscription(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (inscription: Inscription) => {
+    setEditingInscription(inscription);
+    setIsDialogOpen(true);
+  };
+
+  const handleRenew = async (inscription: Inscription) => {
     try {
-      let table = "";
-      if (categorie === "Adulte") {
-        table = "inscriptions_adultes";
-      } else if (categorie === "Enfant") {
-        table = "inscriptions_enfants";
-      } else {
-        table = "inscriptions_femmes";
+      const newStartDate = new Date(inscription.date_fin);
+      newStartDate.setDate(newStartDate.getDate() + 1);
+      
+      const newEndDate = new Date(newStartDate);
+      const dureeEnMois = parseInt(inscription.duree_abonnement.split(' ')[0]);
+      newEndDate.setMonth(newEndDate.getMonth() + dureeEnMois);
+
+      const renewalData = {
+        nom: inscription.nom,
+        prenom: inscription.prenom,
+        age: inscription.age,
+        telephone: inscription.telephone,
+        specialite: inscription.specialite,
+        date_debut: newStartDate.toISOString().split('T')[0],
+        date_fin: newEndDate.toISOString().split('T')[0],
+        duree_abonnement: inscription.duree_abonnement,
+        prix_total: inscription.prix_total
+      };
+
+      let error;
+      if (inscription.categorie === 'Enfant') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_enfants')
+          .insert([renewalData]);
+        error = insertError;
+      } else if (inscription.categorie === 'Adulte') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_adultes')
+          .insert([renewalData]);
+        error = insertError;
+      } else if (inscription.categorie === 'Femme') {
+        const { error: insertError } = await supabase
+          .from('inscriptions_femmes')
+          .insert([renewalData]);
+        error = insertError;
       }
 
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq("id", id);
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de renouveler l'inscription",
+          variant: "destructive"
+        });
+        return;
+      }
 
-      if (error) throw error;
-
-      // Refresh inscriptions after deletion
+      toast({
+        title: "Succès",
+        description: "Inscription renouvelée avec succès"
+      });
+      
       fetchInscriptions();
     } catch (error) {
-      console.error("Erreur lors de la suppression de l'inscription:", error);
+      toast({
+        title: "Erreur",
+        description: "Erreur lors du renouvellement",
+        variant: "destructive"
+      });
     }
   };
+
+  const handleDelete = async (inscription: Inscription) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'inscription de ${inscription.nom} ${inscription.prenom} ?`)) {
+      return;
+    }
+
+    try {
+      let error;
+      if (inscription.categorie === 'Enfant') {
+        const { error: deleteError } = await supabase
+          .from('inscriptions_enfants')
+          .delete()
+          .eq('id', inscription.id);
+        error = deleteError;
+      } else if (inscription.categorie === 'Adulte') {
+        const { error: deleteError } = await supabase
+          .from('inscriptions_adultes')
+          .delete()
+          .eq('id', inscription.id);
+        error = deleteError;
+      } else if (inscription.categorie === 'Femme') {
+        const { error: deleteError } = await supabase
+          .from('inscriptions_femmes')
+          .delete()
+          .eq('id', inscription.id);
+        error = deleteError;
+      }
+
+      if (error) {
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer l'inscription",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      toast({
+        title: "Succès",
+        description: "Inscription supprimée avec succès"
+      });
+      
+      fetchInscriptions();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur lors de la suppression",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const categories = ["Tous", "Femme", "Enfant", "Adulte"];
+  const statuses = ["Tous", "Active", "Expire bientôt", "Expirée"];
+  
+  // Get unique specialties for dropdown
+  const specialites = ["Toutes", ...Array.from(new Set(inscriptions.map(inscription => inscription.specialite)))];
+
+  // Helper function to get inscription status
+  const getInscriptionStatus = (dateFin: string) => {
+    const today = new Date();
+    const endDate = new Date(dateFin);
+    const diffTime = endDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return "Expirée";
+    } else if (diffDays <= 7) {
+      return "Expire bientôt";
+    } else {
+      return "Active";
+    }
+  };
+
+  const filteredInscriptions = inscriptions.filter(inscription => {
+    const matchesSearch = inscription.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inscription.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inscription.specialite.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         inscription.telephone.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === "Tous" || inscription.categorie === selectedCategory;
+    const matchesSpecialite = selectedSpecialite === "Toutes" || inscription.specialite === selectedSpecialite;
+    const inscriptionStatus = getInscriptionStatus(inscription.date_fin);
+    const matchesStatus = selectedStatus === "Tous" || inscriptionStatus === selectedStatus;
+    return matchesSearch && matchesCategory && matchesSpecialite && matchesStatus;
+  });
 
   const getStatusBadge = (dateFin: string) => {
     const today = new Date();
-    const finDate = new Date(dateFin);
-    const diffTime = finDate.getTime() - today.getTime();
+    const endDate = new Date(dateFin);
+    const diffTime = endDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
       return <Badge variant="destructive">Expirée</Badge>;
     } else if (diffDays <= 7) {
-      return <Badge className="bg-orange-500 text-white">Expire bientôt</Badge>;
+      return <Badge className="bg-gym-warning text-white">Expire bientôt</Badge>;
     } else {
-      return <Badge className="bg-green-500 text-white">Active</Badge>;
+      return <Badge className="bg-gym-success text-white">Active</Badge>;
     }
   };
 
@@ -185,135 +258,182 @@ export default function Inscriptions() {
       "Adulte": "bg-green-100 text-green-800"
     };
     return (
-      <Badge className={colors[categorie as keyof typeof colors]}>
+      <span className={`px-2 py-1 rounded-full text-xs ${colors[categorie as keyof typeof colors]}`}>
         {categorie}
-      </Badge>
+      </span>
     );
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Inscriptions</h1>
-        <p className="text-muted-foreground">
-          Gérez toutes les inscriptions de votre salle de sport
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Inscriptions</h1>
+          <p className="text-muted-foreground">
+            Gérez les inscriptions de vos clients
+          </p>
+        </div>
+        <Button 
+          onClick={handleAddNew}
+          className="bg-gym-yellow text-black hover:bg-gym-yellow/90"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Ajouter une inscription
+        </Button>
       </div>
 
-      {/* Filters */}
+      {/* Modal Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <InscriptionForm 
+            onSuccess={handleFormSuccess} 
+            editingInscription={editingInscription}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Search and Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="w-5 h-5" />
-            Filtres
-          </CardTitle>
+          <CardTitle>Recherche et Filtres</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <Search className="w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par nom..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64"
-              />
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom, prénom, spécialité ou téléphone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-            
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Tous">Toutes</SelectItem>
-                <SelectItem value="Adulte">Adultes</SelectItem>
-                <SelectItem value="Enfant">Enfants</SelectItem>
-                <SelectItem value="Femme">Femmes</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedSpecialite} onValueChange={setSelectedSpecialite}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Spécialité" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Toutes">Toutes</SelectItem>
-                {specialites.map(spec => (
-                  <SelectItem key={spec} value={spec}>{spec}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Tous">Tous</SelectItem>
-                <SelectItem value="Active">Actives</SelectItem>
-                <SelectItem value="Expire bientôt">Expire bientôt</SelectItem>
-                <SelectItem value="Expirée">Expirées</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Filter className="h-4 w-4 mt-3 text-muted-foreground" />
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Genre" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedSpecialite} onValueChange={setSelectedSpecialite}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Spécialité" />
+                </SelectTrigger>
+                <SelectContent>
+                  {specialites.map((specialite) => (
+                    <SelectItem key={specialite} value={specialite}>
+                      {specialite}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  {statuses.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Inscriptions Table */}
+      {/* Inscriptions List */}
       <Card>
         <CardHeader>
-          <CardTitle>Liste des Inscriptions ({filteredInscriptions.length})</CardTitle>
+          <CardTitle>
+            Liste des Inscriptions ({filteredInscriptions.length})
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Catégorie</TableHead>
-                  <TableHead>Spécialité</TableHead>
-                  <TableHead>Téléphone</TableHead>
-                  <TableHead>Date fin</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead>Prix</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3">Client</th>
+                  <th className="text-left p-3">Contact</th>
+                  <th className="text-left p-3">Catégorie</th>
+                  <th className="text-left p-3">Spécialité</th>
+                  <th className="text-left p-3">Période</th>
+                  <th className="text-left p-3">Prix</th>
+                  <th className="text-left p-3">Statut</th>
+                  <th className="text-left p-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
                 {filteredInscriptions.map((inscription) => (
-                  <TableRow key={inscription.id}>
-                    <TableCell className="font-medium">
-                      {inscription.prenom} {inscription.nom}
-                      {inscription.age && <span className="text-muted-foreground ml-1">({inscription.age} ans)</span>}
-                    </TableCell>
-                    <TableCell>
-                      {getCategoryBadge(inscription.categorie)}
-                    </TableCell>
-                    <TableCell>{inscription.specialite}</TableCell>
-                    <TableCell>{inscription.telephone}</TableCell>
-                    <TableCell>{new Date(inscription.date_fin).toLocaleDateString('fr-FR')}</TableCell>
-                    <TableCell>
-                      {getStatusBadge(inscription.date_fin)}
-                    </TableCell>
-                    <TableCell className="font-medium">{inscription.prix_total} DT</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => deleteInscription(inscription.id, inscription.categorie)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                  <tr key={inscription.id} className="border-b hover:bg-muted/50">
+                    <td className="p-3">
+                      <div>
+                        <div className="font-medium">{inscription.nom} {inscription.prenom}</div>
+                        <div className="text-sm text-muted-foreground">{inscription.age} ans</div>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </td>
+                    <td className="p-3 text-sm">{inscription.telephone}</td>
+                    <td className="p-3">
+                      {getCategoryBadge(inscription.categorie)}
+                    </td>
+                    <td className="p-3">{inscription.specialite}</td>
+                     <td className="p-3">
+                       <div className="text-sm">
+                         <div>Du {inscription.date_debut}</div>
+                         <div>Au {inscription.date_fin}</div>
+                         <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
+                       </div>
+                     </td>
+                     <td className="p-3">{inscription.prix_total}€</td>
+                     <td className="p-3">
+                       {getStatusBadge(inscription.date_fin)}
+                     </td>
+                     <td className="p-3">
+                       <div className="flex gap-1">
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => handleEdit(inscription)}
+                         >
+                           <Edit className="w-4 h-4 mr-1" />
+                           Modifier
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => handleRenew(inscription)}
+                         >
+                           <RotateCcw className="w-4 h-4 mr-1" />
+                           Renouveler
+                         </Button>
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           className="text-destructive hover:text-destructive"
+                           onClick={() => handleDelete(inscription)}
+                         >
+                           <Trash2 className="w-4 h-4" />
+                         </Button>
+                       </div>
+                     </td>
+                  </tr>
                 ))}
-              </TableBody>
-            </Table>
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>
