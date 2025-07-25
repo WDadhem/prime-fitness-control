@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export default function Statistiques() {
     revenusData,
     categoriesData,
     coachStats,
+    specialiteStats,
     clientsExpires,
     clientsExpirationProche,
     totalClients,
@@ -54,9 +56,9 @@ export default function Statistiques() {
     if (joursRestants < 0) {
       return <Badge variant="destructive">Expiré</Badge>;
     } else if (joursRestants <= 7) {
-      return <Badge className="bg-gym-warning text-white">Expire bientôt</Badge>;
+      return <Badge className="bg-orange-500 text-white">Expire bientôt</Badge>;
     }
-    return <Badge className="bg-gym-success text-white">Actif</Badge>;
+    return <Badge className="bg-green-500 text-white">Actif</Badge>;
   };
 
   return (
@@ -127,7 +129,7 @@ export default function Statistiques() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRevenus.toLocaleString()} €</div>
+            <div className="text-2xl font-bold">{totalRevenus.toLocaleString()} DT</div>
             <p className="text-xs text-muted-foreground">
               +12% par rapport au semestre précédent
             </p>
@@ -139,7 +141,7 @@ export default function Statistiques() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{moyenneRevenus.toLocaleString()} €</div>
+            <div className="text-2xl font-bold">{moyenneRevenus.toLocaleString()} DT</div>
             <p className="text-xs text-muted-foreground">
               Moyenne sur 6 mois
             </p>
@@ -184,7 +186,10 @@ export default function Statistiques() {
                 <XAxis dataKey="mois" />
                 <YAxis yAxisId="left" />
                 <YAxis yAxisId="right" orientation="right" />
-                <Tooltip />
+                <Tooltip formatter={(value, name) => [
+                  name === 'revenus' ? `${value} DT` : value,
+                  name === 'revenus' ? 'Revenus' : 'Inscriptions'
+                ]} />
                 <Area 
                   yAxisId="left" 
                   type="monotone" 
@@ -244,7 +249,7 @@ export default function Statistiques() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-3">Coach</th>
-                  <th className="text-left p-3">Spécialité</th>
+                  <th className="text-left p-3">Spécialités</th>
                   <th className="text-left p-3">Clients</th>
                   <th className="text-left p-3">Revenus</th>
                   <th className="text-left p-3">Moyenne/Client</th>
@@ -254,10 +259,47 @@ export default function Statistiques() {
                 {coachStats.map((coach, index) => (
                   <tr key={index} className="border-b hover:bg-muted/50">
                     <td className="p-3 font-medium">{coach.coach}</td>
-                    <td className="p-3">{coach.specialite}</td>
+                    <td className="p-3">{coach.specialites}</td>
                     <td className="p-3">{coach.clients}</td>
-                    <td className="p-3">{coach.revenus.toLocaleString()} €</td>
-                    <td className="p-3">{(coach.revenus / coach.clients).toFixed(0)} €</td>
+                    <td className="p-3">{coach.revenus.toLocaleString()} DT</td>
+                    <td className="p-3">{coach.moyenneClient} DT</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Specialty Statistics */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Statistiques par Spécialité</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-3">Spécialité</th>
+                  <th className="text-left p-3">Clients</th>
+                  <th className="text-left p-3">Revenus</th>
+                  <th className="text-left p-3">Moyenne/Client</th>
+                  <th className="text-left p-3">Femmes</th>
+                  <th className="text-left p-3">Enfants</th>
+                  <th className="text-left p-3">Adultes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {specialiteStats.map((specialite, index) => (
+                  <tr key={index} className="border-b hover:bg-muted/50">
+                    <td className="p-3 font-medium">{specialite.specialite}</td>
+                    <td className="p-3">{specialite.clients}</td>
+                    <td className="p-3">{specialite.revenus.toLocaleString()} DT</td>
+                    <td className="p-3">{specialite.moyenneClient} DT</td>
+                    <td className="p-3">{specialite.femmes}</td>
+                    <td className="p-3">{specialite.enfants}</td>
+                    <td className="p-3">{specialite.adultes}</td>
                   </tr>
                 ))}
               </tbody>

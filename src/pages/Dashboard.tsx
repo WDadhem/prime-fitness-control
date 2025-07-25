@@ -1,3 +1,5 @@
+
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -5,9 +7,13 @@ import { Users, UserX, Clock, DollarSign, AlertTriangle, CalendarX } from "lucid
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useNavigate } from "react-router-dom";
+import InscriptionDetailModal from "@/components/InscriptionDetailModal";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [selectedInscription, setSelectedInscription] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const { 
     stats, 
     pieData, 
@@ -26,6 +32,11 @@ export default function Dashboard() {
 
   const handleVoirPlusBientotExpirees = () => {
     navigate('/inscriptions?filter=expiring');
+  };
+
+  const handleInscriptionClick = (inscription: any) => {
+    setSelectedInscription(inscription);
+    setIsModalOpen(true);
   };
 
   if (isLoading) {
@@ -84,10 +95,10 @@ export default function Dashboard() {
           description="Moins de 7 jours"
         />
         <StatCard
-          title="Revenus Totaux"
-          value={`${stats.revenus.toLocaleString()} €`}
-          icon={DollarSign}
-          description="Ce mois-ci"
+          title="Inscriptions Actives"
+          value={stats.inscriptionsActives}
+          icon={Users}
+          description="En cours de validité"
         />
       </div>
 
@@ -126,7 +137,11 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {inscriptionsExpireesList.map((inscription, index) => (
-                  <TableRow key={index}>
+                  <TableRow 
+                    key={index} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleInscriptionClick(inscription)}
+                  >
                     <TableCell className="font-medium">
                       {inscription.prenom} {inscription.nom}
                     </TableCell>
@@ -139,7 +154,7 @@ export default function Dashboard() {
                         {inscription.categorie}
                       </span>
                     </TableCell>
-                    <TableCell className="text-destructive">{inscription.dateFin}</TableCell>
+                    <TableCell className="text-destructive">{new Date(inscription.date_fin).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>{inscription.telephone}</TableCell>
                   </TableRow>
                 ))}
@@ -181,7 +196,11 @@ export default function Dashboard() {
               </TableHeader>
               <TableBody>
                 {inscriptionsBientotExpireesList.map((inscription, index) => (
-                  <TableRow key={index}>
+                  <TableRow 
+                    key={index} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleInscriptionClick(inscription)}
+                  >
                     <TableCell className="font-medium">
                       {inscription.prenom} {inscription.nom}
                     </TableCell>
@@ -194,7 +213,7 @@ export default function Dashboard() {
                         {inscription.categorie}
                       </span>
                     </TableCell>
-                    <TableCell className="text-orange-600 font-medium">{inscription.dateFin}</TableCell>
+                    <TableCell className="text-orange-600 font-medium">{new Date(inscription.date_fin).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>{inscription.telephone}</TableCell>
                   </TableRow>
                 ))}
@@ -243,14 +262,13 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mois" />
                 <YAxis />
-                <Tooltip formatter={(value) => [`${value} €`, "Revenus"]} />
+                <Tooltip formatter={(value) => [`${value} DT`, "Revenus"]} />
                 <Bar dataKey="revenus" fill="hsl(var(--primary))" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
-
 
       {/* Recent Inscriptions */}
       <Card>
@@ -292,6 +310,13 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Modal pour les détails */}
+      <InscriptionDetailModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        inscription={selectedInscription}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,7 +48,22 @@ export const useDashboardData = () => {
     },
   });
 
+  const today = new Date();
+  const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
   // Calculer les statistiques
+  const allInscriptions = [
+    ...inscriptionsAdultes.map(i => ({ ...i, type: 'adulte' })),
+    ...inscriptionsEnfants.map(i => ({ ...i, type: 'enfant' })),
+    ...inscriptionsFemmes.map(i => ({ ...i, type: 'femme' })),
+  ];
+
+  // Calculer les inscriptions actives (non expirées)
+  const inscriptionsActives = allInscriptions.filter(inscription => {
+    const dateFin = new Date(inscription.date_fin);
+    return dateFin >= today;
+  });
+
   const stats = {
     totalInscriptions: {
       femmes: inscriptionsFemmes.length,
@@ -57,19 +73,11 @@ export const useDashboardData = () => {
     },
     inscriptionsExpirees: 0,
     expirationProche: 0,
+    inscriptionsActives: inscriptionsActives.length, // Remplace revenus
     revenus: 0,
   };
 
-  const today = new Date();
-  const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-
   // Calculer les expirations
-  const allInscriptions = [
-    ...inscriptionsAdultes.map(i => ({ ...i, type: 'adulte' })),
-    ...inscriptionsEnfants.map(i => ({ ...i, type: 'enfant' })),
-    ...inscriptionsFemmes.map(i => ({ ...i, type: 'femme' })),
-  ];
-
   allInscriptions.forEach(inscription => {
     const dateFin = new Date(inscription.date_fin);
     if (dateFin < today) {
@@ -124,49 +132,75 @@ export const useDashboardData = () => {
       offre: inscription.specialite,
     }));
 
-  // Inscriptions expirées
+  // Inscriptions expirées (limité à 5)
   const inscriptionsExpireesList = allInscriptions
     .filter(inscription => new Date(inscription.date_fin) < today)
     .sort((a, b) => new Date(b.date_fin).getTime() - new Date(a.date_fin).getTime())
+    .slice(0, 5)
     .map(inscription => ({
+      id: inscription.id,
       nom: inscription.nom,
       prenom: inscription.prenom,
-      categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
-      dateFin: new Date(inscription.date_fin).toLocaleDateString('fr-FR'),
-      offre: inscription.specialite,
+      age: inscription.age,
       telephone: inscription.telephone,
+      specialite: inscription.specialite,
+      date_debut: inscription.date_debut,
+      date_fin: inscription.date_fin,
+      duree_abonnement: inscription.duree_abonnement,
+      prix_total: inscription.prix_total,
+      categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
+      created_at: inscription.created_at,
     }));
 
-  // Inscriptions bientôt expirées (dans les 7 prochains jours)
+  // Inscriptions bientôt expirées (dans les 7 prochains jours, limité à 5)
   const inscriptionsBientotExpireesList = allInscriptions
     .filter(inscription => {
       const dateFin = new Date(inscription.date_fin);
       return dateFin >= today && dateFin <= sevenDaysFromNow;
     })
     .sort((a, b) => new Date(a.date_fin).getTime() - new Date(b.date_fin).getTime())
+    .slice(0, 5)
     .map(inscription => ({
+      id: inscription.id,
       nom: inscription.nom,
       prenom: inscription.prenom,
-      categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
-      dateFin: new Date(inscription.date_fin).toLocaleDateString('fr-FR'),
-      offre: inscription.specialite,
+      age: inscription.age,
       telephone: inscription.telephone,
+      specialite: inscription.specialite,
+      date_debut: inscription.date_debut,
+      date_fin: inscription.date_fin,
+      duree_abonnement: inscription.duree_abonnement,
+      prix_total: inscription.prix_total,
+      categorie: inscription.type === 'adulte' ? 'Adulte' : inscription.type === 'enfant' ? 'Enfant' : 'Femme',
+      created_at: inscription.created_at,
     }));
 
   // Statistiques pour les inscriptions expirées
   const statsExpirees = {
-    total: inscriptionsExpireesList.length,
-    femmes: inscriptionsExpireesList.filter(i => i.categorie === 'Femme').length,
-    enfants: inscriptionsExpireesList.filter(i => i.categorie === 'Enfant').length,
-    adultes: inscriptionsExpireesList.filter(i => i.categorie === 'Adulte').length,
+    total: allInscriptions.filter(inscription => new Date(inscription.date_fin) < today).length,
+    femmes: allInscriptions.filter(inscription => new Date(inscription.date_fin) < today && inscription.type === 'femme').length,
+    enfants: allInscriptions.filter(inscription => new Date(inscription.date_fin) < today && inscription.type === 'enfant').length,
+    adultes: allInscriptions.filter(inscription => new Date(inscription.date_fin) < today && inscription.type === 'adulte').length,
   };
 
   // Statistiques pour les inscriptions bientôt expirées
   const statsBientotExpirees = {
-    total: inscriptionsBientotExpireesList.length,
-    femmes: inscriptionsBientotExpireesList.filter(i => i.categorie === 'Femme').length,
-    enfants: inscriptionsBientotExpireesList.filter(i => i.categorie === 'Enfant').length,
-    adultes: inscriptionsBientotExpireesList.filter(i => i.categorie === 'Adulte').length,
+    total: allInscriptions.filter(inscription => {
+      const dateFin = new Date(inscription.date_fin);
+      return dateFin >= today && dateFin <= sevenDaysFromNow;
+    }).length,
+    femmes: allInscriptions.filter(inscription => {
+      const dateFin = new Date(inscription.date_fin);
+      return dateFin >= today && dateFin <= sevenDaysFromNow && inscription.type === 'femme';
+    }).length,
+    enfants: allInscriptions.filter(inscription => {
+      const dateFin = new Date(inscription.date_fin);
+      return dateFin >= today && dateFin <= sevenDaysFromNow && inscription.type === 'enfant';
+    }).length,
+    adultes: allInscriptions.filter(inscription => {
+      const dateFin = new Date(inscription.date_fin);
+      return dateFin >= today && dateFin <= sevenDaysFromNow && inscription.type === 'adulte';
+    }).length,
   };
 
   return {
@@ -174,8 +208,8 @@ export const useDashboardData = () => {
     pieData,
     barData,
     dernieresInscriptions,
-    inscriptionsExpireesList: inscriptionsExpireesList.slice(0, 5),
-    inscriptionsBientotExpireesList: inscriptionsBientotExpireesList.slice(0, 5),
+    inscriptionsExpireesList,
+    inscriptionsBientotExpireesList,
     statsExpirees,
     statsBientotExpirees,
     isLoading: false,

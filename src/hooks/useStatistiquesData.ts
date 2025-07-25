@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -94,26 +95,70 @@ export const useStatistiquesData = () => {
     { name: "Adultes", value: inscriptionsAdultes.length, color: "hsl(var(--chart-3))" },
   ];
 
-  // Statistiques par coach (basées sur les spécialités)
+  // Statistiques par coach (basées sur les offres avec coach)
   const coachStats = (() => {
-    const specialiteStats = new Map();
+    const coachData = new Map();
+    
+    // Grouper par coach depuis les offres
+    offres.forEach(offre => {
+      if (offre.coach) {
+        const inscriptionsForOffer = allInscriptions.filter(i => i.specialite === offre.nom);
+        
+        if (!coachData.has(offre.coach)) {
+          coachData.set(offre.coach, {
+            clients: 0,
+            revenus: 0,
+            specialites: new Set()
+          });
+        }
+        
+        const current = coachData.get(offre.coach);
+        current.clients += inscriptionsForOffer.length;
+        current.revenus += inscriptionsForOffer.reduce((sum, i) => sum + (i.prix_total || 0), 0);
+        current.specialites.add(offre.nom);
+      }
+    });
+
+    return Array.from(coachData.entries()).map(([coach, stats]) => ({
+      coach,
+      clients: stats.clients,
+      revenus: stats.revenus,
+      specialites: Array.from(stats.specialites).join(', '),
+      moyenneClient: stats.clients > 0 ? (stats.revenus / stats.clients).toFixed(0) : 0,
+    }));
+  })();
+
+  // Statistiques par spécialité
+  const specialiteStats = (() => {
+    const specialiteData = new Map();
     
     allInscriptions.forEach(inscription => {
       const specialite = inscription.specialite;
-      if (!specialiteStats.has(specialite)) {
-        specialiteStats.set(specialite, { clients: 0, revenus: 0 });
+      if (!specialiteData.has(specialite)) {
+        specialiteData.set(specialite, {
+          clients: 0,
+          revenus: 0,
+          categories: { femmes: 0, enfants: 0, adultes: 0 }
+        });
       }
       
-      const current = specialiteStats.get(specialite);
+      const current = specialiteData.get(specialite);
       current.clients += 1;
       current.revenus += inscription.prix_total || 0;
+      
+      if (inscription.type === 'femme') current.categories.femmes += 1;
+      else if (inscription.type === 'enfant') current.categories.enfants += 1;
+      else if (inscription.type === 'adulte') current.categories.adultes += 1;
     });
 
-    return Array.from(specialiteStats.entries()).map(([specialite, stats]) => ({
-      coach: `Coach ${specialite}`,
+    return Array.from(specialiteData.entries()).map(([specialite, stats]) => ({
+      specialite,
       clients: stats.clients,
       revenus: stats.revenus,
-      specialite: specialite,
+      moyenneClient: stats.clients > 0 ? (stats.revenus / stats.clients).toFixed(0) : 0,
+      femmes: stats.categories.femmes,
+      enfants: stats.categories.enfants,
+      adultes: stats.categories.adultes,
     }));
   })();
 
@@ -153,6 +198,7 @@ export const useStatistiquesData = () => {
     revenusData,
     categoriesData,
     coachStats,
+    specialiteStats,
     clientsExpires,
     clientsExpirationProche,
     totalClients,

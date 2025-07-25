@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, Filter, Edit, Trash2, RotateCcw } from "lucide-react";
+import { Plus, Search, Filter, Edit, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -86,69 +87,6 @@ export default function Inscriptions() {
   const handleEdit = (inscription: Inscription) => {
     setEditingInscription(inscription);
     setIsDialogOpen(true);
-  };
-
-  const handleRenew = async (inscription: Inscription) => {
-    try {
-      const newStartDate = new Date(inscription.date_fin);
-      newStartDate.setDate(newStartDate.getDate() + 1);
-      
-      const newEndDate = new Date(newStartDate);
-      const dureeEnMois = parseInt(inscription.duree_abonnement.split(' ')[0]);
-      newEndDate.setMonth(newEndDate.getMonth() + dureeEnMois);
-
-      const renewalData = {
-        nom: inscription.nom,
-        prenom: inscription.prenom,
-        age: inscription.age,
-        telephone: inscription.telephone,
-        specialite: inscription.specialite,
-        date_debut: newStartDate.toISOString().split('T')[0],
-        date_fin: newEndDate.toISOString().split('T')[0],
-        duree_abonnement: inscription.duree_abonnement,
-        prix_total: inscription.prix_total
-      };
-
-      let error;
-      if (inscription.categorie === 'Enfant') {
-        const { error: insertError } = await supabase
-          .from('inscriptions_enfants')
-          .insert([renewalData]);
-        error = insertError;
-      } else if (inscription.categorie === 'Adulte') {
-        const { error: insertError } = await supabase
-          .from('inscriptions_adultes')
-          .insert([renewalData]);
-        error = insertError;
-      } else if (inscription.categorie === 'Femme') {
-        const { error: insertError } = await supabase
-          .from('inscriptions_femmes')
-          .insert([renewalData]);
-        error = insertError;
-      }
-
-      if (error) {
-        toast({
-          title: "Erreur",
-          description: "Impossible de renouveler l'inscription",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      toast({
-        title: "Succès",
-        description: "Inscription renouvelée avec succès"
-      });
-      
-      fetchInscriptions();
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Erreur lors du renouvellement",
-        variant: "destructive"
-      });
-    }
   };
 
   const handleDelete = async (inscription: Inscription) => {
@@ -245,9 +183,9 @@ export default function Inscriptions() {
     if (diffDays < 0) {
       return <Badge variant="destructive">Expirée</Badge>;
     } else if (diffDays <= 7) {
-      return <Badge className="bg-gym-warning text-white">Expire bientôt</Badge>;
+      return <Badge className="bg-orange-500 text-white">Expire bientôt</Badge>;
     } else {
-      return <Badge className="bg-gym-success text-white">Active</Badge>;
+      return <Badge className="bg-green-500 text-white">Active</Badge>;
     }
   };
 
@@ -398,7 +336,7 @@ export default function Inscriptions() {
                          <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
                        </div>
                      </td>
-                     <td className="p-3">{inscription.prix_total}€</td>
+                     <td className="p-3">{inscription.prix_total} DT</td>
                      <td className="p-3">
                        {getStatusBadge(inscription.date_fin)}
                      </td>
@@ -411,14 +349,6 @@ export default function Inscriptions() {
                          >
                            <Edit className="w-4 h-4 mr-1" />
                            Modifier
-                         </Button>
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => handleRenew(inscription)}
-                         >
-                           <RotateCcw className="w-4 h-4 mr-1" />
-                           Renouveler
                          </Button>
                          <Button 
                            variant="outline" 
