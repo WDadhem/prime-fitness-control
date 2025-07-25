@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard } from "@/components/ui/metric-card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { InscriptionDetailModal } from "@/components/InscriptionDetailModal";
+import InscriptionDetailModal from "@/components/InscriptionDetailModal";
 import {
   BarChart,
   Bar,
