@@ -366,12 +366,11 @@ export default function Inscriptions() {
               </thead>
               <tbody>
                 {filteredInscriptions.map((inscription) => (
-                  <tr 
-                    key={inscription.id} 
-                    className="border-b hover:bg-muted/50 cursor-pointer"
-                    onClick={() => handleInscriptionClick(inscription)}
-                  >
-                    <td className="p-3">
+                  <tr key={inscription.id} className="border-b hover:bg-muted/50">
+                    <td 
+                      className="p-3 cursor-pointer"
+                      onClick={() => handleInscriptionClick(inscription)}
+                    >
                       <div>
                         <div className="font-medium">{inscription.nom} {inscription.prenom}</div>
                         <div className="text-sm text-muted-foreground">{inscription.age} ans</div>
@@ -382,47 +381,49 @@ export default function Inscriptions() {
                       {getCategoryBadge(inscription.categorie)}
                     </td>
                     <td className="p-3">{inscription.specialite}</td>
-                    <td className="p-3">
-                      <div className="text-sm">
-                        <div>Du {inscription.date_debut}</div>
-                        <div>Au {inscription.date_fin}</div>
-                        <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
-                      </div>
-                    </td>
-                    <td className="p-3">{inscription.prix_total} DT</td>
-                    <td className="p-3">
-                      {getStatusBadge(inscription.date_fin)}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(inscription)}
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Modifier
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleProlonger(inscription)}
-                          className="bg-gym-yellow text-black hover:bg-gym-yellow/90"
-                        >
-                          <Clock className="w-4 h-4 mr-1" />
-                          Prolonger
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDelete(inscription)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Supprimer
-                        </Button>
-                      </div>
-                    </td>
+                     <td className="p-3">
+                       <div className="text-sm">
+                         <div>Du {inscription.date_debut}</div>
+                         <div>Au {inscription.date_fin}</div>
+                         <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
+                       </div>
+                     </td>
+                     <td className="p-3">{inscription.prix_total} DT</td>
+                     <td className="p-3">
+                       {getStatusBadge(inscription.date_fin)}
+                     </td>
+                     <td className="p-3">
+                       <div className="flex gap-1">
+                         <Button 
+                           variant="outline" 
+                           size="sm"
+                           onClick={() => handleEdit(inscription)}
+                         >
+                           <Edit className="w-4 h-4 mr-1" />
+                           Modifier
+                         </Button>
+                         <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                             <Button variant="outline" size="sm">
+                               <MoreHorizontal className="w-4 h-4" />
+                             </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="end">
+                             <DropdownMenuItem onClick={() => handleProlonger(inscription)}>
+                               <Clock className="w-4 h-4 mr-2" />
+                               Prolonger
+                             </DropdownMenuItem>
+                             <DropdownMenuItem 
+                               onClick={() => handleDelete(inscription)}
+                               className="text-destructive focus:text-destructive"
+                             >
+                               <Trash2 className="w-4 h-4 mr-2" />
+                               Supprimer
+                             </DropdownMenuItem>
+                           </DropdownMenuContent>
+                         </DropdownMenu>
+                       </div>
+                     </td>
                   </tr>
                 ))}
               </tbody>
