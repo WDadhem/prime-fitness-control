@@ -69,7 +69,6 @@ export default function Dashboard() {
 
   const handleDetailModalEdit = (inscription: any) => {
     setIsDetailModalOpen(false);
-    // For now, we'll just show a toast since editing from dashboard isn't implemented
     toast({
       title: "Redirection",
       description: "Veuillez aller à la page Inscriptions pour modifier cette inscription"
@@ -78,7 +77,6 @@ export default function Dashboard() {
 
   const handleDetailModalProlonger = (inscription: any) => {
     setIsDetailModalOpen(false);
-    // For now, we'll just show a toast since prolonging from dashboard isn't implemented
     toast({
       title: "Redirection",
       description: "Veuillez aller à la page Inscriptions pour prolonger cette inscription"
@@ -87,7 +85,6 @@ export default function Dashboard() {
 
   const handleDetailModalDelete = (inscription: any) => {
     setIsDetailModalOpen(false);
-    // For now, we'll just show a toast since deleting from dashboard isn't implemented
     toast({
       title: "Redirection",
       description: "Veuillez aller à la page Inscriptions pour supprimer cette inscription"
