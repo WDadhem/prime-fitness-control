@@ -253,7 +253,7 @@ export default function Inscriptions() {
         </div>
         <Button 
           onClick={handleAddNew}
-          className="bg-gym-yellow text-black hover:bg-gym-yellow/90"
+          className="bg-gym-yellow text-white hover:bg-gym-yellow/90"
         >
           <Plus className="w-4 h-4 mr-2" />
           Ajouter une inscription
@@ -276,66 +276,73 @@ export default function Inscriptions() {
           <CardTitle>Recherche et Filtres</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher par nom, prénom, spécialité ou téléphone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher par nom, prénom, spécialité ou téléphone..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <div className="flex gap-2">
-              <Filter className="h-4 w-4 mt-3 text-muted-foreground" />
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Genre</Label>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue placeholder="Genre" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground">Filtres:</span>
               </div>
               
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Spécialité</Label>
-                <Select value={selectedSpecialite} onValueChange={setSelectedSpecialite}>
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="Spécialité" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {specialites.map((specialite) => (
-                      <SelectItem key={specialite} value={specialite}>
-                        {specialite}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Statut</Label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-[160px]">
-                    <SelectValue placeholder="Statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statuses.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                <div className="flex-1 space-y-2">
+                  <Label className="text-sm font-medium">Genre</Label>
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-full sm:w-[140px]">
+                      <SelectValue placeholder="Genre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex-1 space-y-2">
+                  <Label className="text-sm font-medium">Spécialité</Label>
+                  <Select value={selectedSpecialite} onValueChange={setSelectedSpecialite}>
+                    <SelectTrigger className="w-full sm:w-[160px]">
+                      <SelectValue placeholder="Spécialité" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {specialites.map((specialite) => (
+                        <SelectItem key={specialite} value={specialite}>
+                          {specialite}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex-1 space-y-2">
+                  <Label className="text-sm font-medium">Statut</Label>
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="w-full sm:w-[160px]">
+                      <SelectValue placeholder="Statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
@@ -351,79 +358,91 @@ export default function Inscriptions() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[800px]">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-3">Client</th>
-                  <th className="text-left p-3">Contact</th>
-                  <th className="text-left p-3">Catégorie</th>
-                  <th className="text-left p-3">Spécialité</th>
-                  <th className="text-left p-3">Période</th>
-                  <th className="text-left p-3">Prix</th>
-                  <th className="text-left p-3">Statut</th>
-                  <th className="text-left p-3">Actions</th>
+                  <th className="text-left p-2 sm:p-3">Client</th>
+                  <th className="text-left p-2 sm:p-3 hidden sm:table-cell">Contact</th>
+                  <th className="text-left p-2 sm:p-3">Catégorie</th>
+                  <th className="text-left p-2 sm:p-3 hidden md:table-cell">Spécialité</th>
+                  <th className="text-left p-2 sm:p-3 hidden lg:table-cell">Période</th>
+                  <th className="text-left p-2 sm:p-3 hidden md:table-cell">Prix</th>
+                  <th className="text-left p-2 sm:p-3">Statut</th>
+                  <th className="text-left p-2 sm:p-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredInscriptions.map((inscription) => (
-                  <tr key={inscription.id} className="border-b hover:bg-muted/50">
-                    <td 
-                      className="p-3 cursor-pointer"
-                      onClick={() => handleInscriptionClick(inscription)}
-                    >
-                      <div>
-                        <div className="font-medium">{inscription.nom} {inscription.prenom}</div>
-                        <div className="text-sm text-muted-foreground">{inscription.age} ans</div>
-                      </div>
-                    </td>
-                    <td className="p-3 text-sm">{inscription.telephone}</td>
-                    <td className="p-3">
-                      {getCategoryBadge(inscription.categorie)}
-                    </td>
-                    <td className="p-3">{inscription.specialite}</td>
-                     <td className="p-3">
-                       <div className="text-sm">
-                         <div>Du {inscription.date_debut}</div>
-                         <div>Au {inscription.date_fin}</div>
-                         <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
+                 {filteredInscriptions.map((inscription) => (
+                   <tr 
+                     key={inscription.id} 
+                     className="border-b hover:bg-muted/50 cursor-pointer"
+                     onClick={() => handleInscriptionClick(inscription)}
+                   >
+                     <td className="p-2 sm:p-3">
+                       <div>
+                         <div className="font-medium text-sm sm:text-base">{inscription.nom} {inscription.prenom}</div>
+                         <div className="text-xs sm:text-sm text-muted-foreground">{inscription.age} ans</div>
+                         <div className="text-xs text-muted-foreground sm:hidden">{inscription.telephone}</div>
                        </div>
                      </td>
-                     <td className="p-3">{inscription.prix_total} DT</td>
-                     <td className="p-3">
-                       {getStatusBadge(inscription.date_fin)}
+                     <td className="p-2 sm:p-3 text-sm hidden sm:table-cell">{inscription.telephone}</td>
+                     <td className="p-2 sm:p-3">
+                       {getCategoryBadge(inscription.categorie)}
+                       <div className="text-xs text-muted-foreground mt-1 md:hidden">{inscription.specialite}</div>
                      </td>
-                     <td className="p-3">
-                       <div className="flex gap-1">
-                         <Button 
-                           variant="outline" 
-                           size="sm"
-                           onClick={() => handleEdit(inscription)}
-                         >
-                           <Edit className="w-4 h-4 mr-1" />
-                           Modifier
-                         </Button>
-                         <DropdownMenu>
-                           <DropdownMenuTrigger asChild>
-                             <Button variant="outline" size="sm">
-                               <MoreHorizontal className="w-4 h-4" />
-                             </Button>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end">
-                             <DropdownMenuItem onClick={() => handleProlonger(inscription)}>
-                               <Clock className="w-4 h-4 mr-2" />
-                               Prolonger
-                             </DropdownMenuItem>
-                             <DropdownMenuItem 
-                               onClick={() => handleDelete(inscription)}
-                               className="text-destructive focus:text-destructive"
-                             >
-                               <Trash2 className="w-4 h-4 mr-2" />
-                               Supprimer
-                             </DropdownMenuItem>
-                           </DropdownMenuContent>
-                         </DropdownMenu>
-                       </div>
-                     </td>
+                     <td className="p-2 sm:p-3 hidden md:table-cell text-sm">{inscription.specialite}</td>
+                      <td className="p-2 sm:p-3 hidden lg:table-cell">
+                        <div className="text-xs sm:text-sm">
+                          <div>Du {inscription.date_debut}</div>
+                          <div>Au {inscription.date_fin}</div>
+                          <div className="text-muted-foreground">({inscription.duree_abonnement})</div>
+                        </div>
+                      </td>
+                      <td className="p-2 sm:p-3 hidden md:table-cell text-sm">{inscription.prix_total} DT</td>
+                      <td className="p-2 sm:p-3">
+                        {getStatusBadge(inscription.date_fin)}
+                        <div className="text-xs text-muted-foreground mt-1 md:hidden">{inscription.prix_total} DT</div>
+                      </td>
+                     <td className="p-2 sm:p-3">
+                        <div className="flex flex-col xl:flex-row gap-1">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(inscription);
+                            }}
+                            className="text-xs h-7 px-2"
+                          >
+                            <Edit className="w-3 h-3 sm:mr-1" />
+                            <span className="hidden sm:inline">Modifier</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleProlonger(inscription);
+                            }}
+                            className="text-xs h-7 px-2"
+                          >
+                            <Clock className="w-3 h-3 sm:mr-1" />
+                            <span className="hidden sm:inline">Prolonger</span>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(inscription);
+                            }}
+                            className="text-xs h-7 px-2 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-3 h-3 sm:mr-1" />
+                            <span className="hidden sm:inline">Supprimer</span>
+                          </Button>
+                        </div>
+                      </td>
                   </tr>
                 ))}
               </tbody>

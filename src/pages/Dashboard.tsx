@@ -7,10 +7,12 @@ import { Users, UserX, Clock, DollarSign, AlertTriangle, CalendarX } from "lucid
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useDashboardData } from "@/hooks/useDashboardData";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 import InscriptionDetailModal from "@/components/InscriptionDetailModal";
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedInscription, setSelectedInscription] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
@@ -316,6 +318,24 @@ export default function Dashboard() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         inscription={selectedInscription}
+        onEdit={() => {
+          toast({
+            title: "Modifier",
+            description: "Fonctionnalité disponible dans la page Inscriptions"
+          });
+        }}
+        onProlonger={() => {
+          toast({
+            title: "Prolonger",
+            description: "Fonctionnalité disponible dans la page Inscriptions"
+          });
+        }}
+        onDelete={() => {
+          toast({
+            title: "Supprimer",
+            description: "Fonctionnalité disponible dans la page Inscriptions"
+          });
+        }}
       />
     </div>
   );

@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Calendar, Plus } from "lucide-react";
+import { Calendar, Plus, MapPin, CreditCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -34,7 +34,24 @@ interface ProlongationModalProps {
 export default function ProlongationModal({ inscription, isOpen, onClose, onSuccess }: ProlongationModalProps) {
   const [monthsToAdd, setMonthsToAdd] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+  const [prixParMois, setPrixParMois] = useState<number>(0);
   const { toast } = useToast();
+
+  // Calculer le prix par mois basé sur l'abonnement actuel
+  useEffect(() => {
+    if (inscription) {
+      const dureeMapping = {
+        "1 mois": 1,
+        "3 mois": 3,
+        "6 mois": 6,
+        "12 mois": 12
+      };
+      
+      const duree = dureeMapping[inscription.duree_abonnement as keyof typeof dureeMapping] || 1;
+      const prixMensuel = inscription.prix_total / duree;
+      setPrixParMois(Math.round(prixMensuel));
+    }
+  }, [inscription]);
 
   const handleConfirm = async () => {
     if (!inscription || !monthsToAdd) return;
@@ -110,10 +127,13 @@ export default function ProlongationModal({ inscription, isOpen, onClose, onSucc
 
   const currentEndDate = new Date(inscription.date_fin);
   const formattedCurrentEndDate = format(currentEndDate, "dd MMMM yyyy", { locale: fr });
+  
+  // Calculer le prix total pour la prolongation
+  const prixTotal = monthsToAdd ? prixParMois * parseInt(monthsToAdd) : 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md mx-4 sm:mx-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5" />
@@ -125,16 +145,31 @@ export default function ProlongationModal({ inscription, isOpen, onClose, onSucc
           <div className="p-4 bg-muted rounded-lg">
             <div className="text-sm text-muted-foreground mb-1">Client</div>
             <div className="font-medium">{inscription.nom} {inscription.prenom}</div>
-            <div className="text-sm text-muted-foreground">{inscription.specialite}</div>
+            <div className="text-sm text-muted-foreground flex items-center gap-2 mt-2">
+              <MapPin className="w-4 h-4" />
+              {inscription.specialite}
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Date de fin actuelle
-            </Label>
-            <div className="p-3 bg-muted rounded-md text-sm">
-              {formattedCurrentEndDate}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4" />
+                Prix par mois
+              </Label>
+              <div className="p-3 bg-muted rounded-md text-sm font-medium">
+                {prixParMois} DT
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Calendar className="w-4 h-4" />
+                Date de fin actuelle
+              </Label>
+              <div className="p-3 bg-muted rounded-md text-sm">
+                {formattedCurrentEndDate}
+              </div>
             </div>
           </div>
 
@@ -154,6 +189,18 @@ export default function ProlongationModal({ inscription, isOpen, onClose, onSucc
             </Select>
           </div>
 
+          {monthsToAdd && (
+            <div className="p-4 bg-primary/10 rounded-lg">
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Prix total de la prolongation:</span>
+                <span className="text-xl font-bold text-primary">{prixTotal} DT</span>
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {monthsToAdd} mois × {prixParMois} DT
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2 pt-4">
             <Button
               variant="outline"
@@ -166,7 +213,7 @@ export default function ProlongationModal({ inscription, isOpen, onClose, onSucc
             <Button
               onClick={handleConfirm}
               disabled={!monthsToAdd || isLoading}
-              className="flex-1 bg-gym-yellow text-black hover:bg-gym-yellow/90"
+              className="flex-1 bg-gym-yellow text-white hover:bg-gym-yellow/90"
             >
               {isLoading ? "Prolongation..." : "Confirmer la prolongation"}
             </Button>
