@@ -4,11 +4,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Calendar, Plus, MapPin, CreditCard } from "lucide-react";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar, Plus, MapPin, CreditCard, CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 interface Inscription {
   id: string;
@@ -33,6 +36,7 @@ interface ProlongationModalProps {
 
 export default function ProlongationModal({ inscription, isOpen, onClose, onSuccess }: ProlongationModalProps) {
   const [monthsToAdd, setMonthsToAdd] = useState<string>("");
+  const [dateDebutProlongation, setDateDebutProlongation] = useState<Date>();
   const [isLoading, setIsLoading] = useState(false);
   const [prixParMois, setPrixParMois] = useState<number>(0);
   const { toast } = useToast();
@@ -54,14 +58,14 @@ export default function ProlongationModal({ inscription, isOpen, onClose, onSucc
   }, [inscription]);
 
   const handleConfirm = async () => {
-    if (!inscription || !monthsToAdd) return;
+    if (!inscription || !monthsToAdd || !dateDebutProlongation) return;
 
     setIsLoading(true);
     
     try {
-      // Calculer la nouvelle date de fin
-      const currentEndDate = new Date(inscription.date_fin);
-      const newEndDate = new Date(currentEndDate);
+      // Calculer la nouvelle date de fin basée sur la date de début de prolongation
+      const startDate = new Date(dateDebutProlongation);
+      const newEndDate = new Date(startDate);
       newEndDate.setMonth(newEndDate.getMonth() + parseInt(monthsToAdd));
 
       // Mettre à jour selon la catégorie
@@ -174,6 +178,37 @@ export default function ProlongationModal({ inscription, isOpen, onClose, onSucc
           </div>
 
           <div className="space-y-2">
+            <Label>Date de début de prolongation</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !dateDebutProlongation && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateDebutProlongation ? (
+                    format(dateDebutProlongation, "dd MMMM yyyy", { locale: fr })
+                  ) : (
+                    <span>Sélectionner une date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={dateDebutProlongation}
+                  onSelect={setDateDebutProlongation}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="months">Nombre de mois à ajouter</Label>
             <Select value={monthsToAdd} onValueChange={setMonthsToAdd}>
               <SelectTrigger>
@@ -212,7 +247,7 @@ export default function ProlongationModal({ inscription, isOpen, onClose, onSucc
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={!monthsToAdd || isLoading}
+              disabled={!monthsToAdd || !dateDebutProlongation || isLoading}
               className="flex-1 bg-gym-yellow text-white hover:bg-gym-yellow/90"
             >
               {isLoading ? "Prolongation..." : "Confirmer la prolongation"}
