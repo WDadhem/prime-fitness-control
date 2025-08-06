@@ -29,7 +29,7 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-bold">Gym Manager</h1>
+            <h1 className="text-xl font-bold">Oxygène</h1>
           </div>
 
           {/* Navigation Links */}

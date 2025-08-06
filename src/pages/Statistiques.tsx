@@ -63,63 +63,12 @@ export default function Statistiques() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Statistiques</h1>
-          <p className="text-muted-foreground">
-            Analyse détaillée des performances de votre salle de sport
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export PDF
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Statistiques</h1>
+        <p className="text-muted-foreground">
+          Analyse détaillée des performances de votre salle de sport
+        </p>
       </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtres</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Période</label>
-              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1-month">1 mois</SelectItem>
-                  <SelectItem value="3-months">3 mois</SelectItem>
-                  <SelectItem value="6-months">6 mois</SelectItem>
-                  <SelectItem value="1-year">1 an</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Catégorie</label>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toutes</SelectItem>
-                  <SelectItem value="femme">Femmes</SelectItem>
-                  <SelectItem value="enfant">Enfants</SelectItem>
-                  <SelectItem value="adulte">Adultes</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -308,56 +257,6 @@ export default function Statistiques() {
         </CardContent>
       </Card>
 
-      {/* Expiration Management */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Abonnements Expirés ({clientsExpires.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {clientsExpires.map((client, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <div className="font-medium">{client.nom} {client.prenom}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Expiré le {client.dateFin} ({Math.abs(client.joursRestants)} jours)
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getCategoryBadge(client.categorie)}
-                    {getExpirationBadge(client.joursRestants)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Expirations Proches ({clientsExpirationProche.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {clientsExpirationProche.map((client, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <div className="font-medium">{client.nom} {client.prenom}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Expire le {client.dateFin} ({client.joursRestants} jours)
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getCategoryBadge(client.categorie)}
-                    {getExpirationBadge(client.joursRestants)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

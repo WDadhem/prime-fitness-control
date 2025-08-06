@@ -158,10 +158,16 @@ export default function InscriptionForm({ onSuccess, editingInscription }: Inscr
   }, [dateDebut, duree]);
 
   const fetchOffres = async () => {
-    const { data, error } = await supabase
-      .from('offres')
-      .select('*')
-      .eq('categorie', categorie === 'Adulte' ? 'Adulte' : categorie);
+    // Pour les femmes, charger à la fois les offres Femme et Adulte
+    let query = supabase.from('offres').select('*');
+    
+    if (categorie === 'Femme') {
+      query = query.in('categorie', ['Femme', 'Adulte']);
+    } else {
+      query = query.eq('categorie', categorie);
+    }
+    
+    const { data, error } = await query;
     
     if (error) {
       toast({
