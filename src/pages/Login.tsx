@@ -59,7 +59,10 @@ export default function Login() {
         description: `Bienvenue ${adminData.prenom} ${adminData.nom}`,
       });
 
-      navigate("/");
+      // Attendre que l'état d'authentification soit mis à jour avant de naviguer
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
     } catch (error) {
       toast({
         title: "Erreur",
