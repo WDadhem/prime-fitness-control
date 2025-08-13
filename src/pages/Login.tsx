@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/components/AuthProvider";
 import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
@@ -15,6 +16,14 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAdmin, isLoading: authLoading } = useAuth();
+
+  // Rediriger si l'utilisateur est déjà connecté et admin
+  useEffect(() => {
+    if (!authLoading && isAdmin) {
+      navigate("/");
+    }
+  }, [isAdmin, authLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,10 +68,7 @@ export default function Login() {
         description: `Bienvenue ${adminData.prenom} ${adminData.nom}`,
       });
 
-      // Attendre que l'état d'authentification soit mis à jour avant de naviguer
-      setTimeout(() => {
-        navigate("/");
-      }, 100);
+      // La navigation sera gérée par useEffect quand isAdmin sera mis à jour
     } catch (error) {
       toast({
         title: "Erreur",
