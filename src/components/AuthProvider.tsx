@@ -19,23 +19,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const checkAdminStatus = async (userId: string) => {
+      try {
+        const { data: adminData } = await supabase
+          .from("admins")
+          .select("*")
+          .eq("user_id", userId)
+          .single();
+        
+        setIsAdmin(!!adminData);
+      } catch (error) {
+        setIsAdmin(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Check if user is admin
-          setTimeout(async () => {
-            const { data: adminData } = await supabase
-              .from("admins")
-              .select("*")
-              .eq("user_id", session.user.id)
-              .single();
-            
-            setIsAdmin(!!adminData);
-            setIsLoading(false);
+          // Use setTimeout to defer Supabase calls and prevent deadlock
+          setTimeout(() => {
+            checkAdminStatus(session.user.id);
           }, 0);
         } else {
           setIsAdmin(false);
@@ -50,16 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Check if user is admin
-        supabase
-          .from("admins")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .single()
-          .then(({ data: adminData }) => {
-            setIsAdmin(!!adminData);
-            setIsLoading(false);
-          });
+        checkAdminStatus(session.user.id);
       } else {
         setIsLoading(false);
       }
